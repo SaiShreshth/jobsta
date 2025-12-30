@@ -17,7 +17,7 @@
                 <!-- LEFT: App title -->
                 <div class="flex items-center space-x-3">
                     <a href="{{ url_for('users.dashboard') }}" class="text-lg font-semibold leading-none text-inherit no-underline">MSRIT Job Portal</a>
-                    {% if current_user and current_user.role == 'admin' %}
+                    {% if (current_user and current_user.role == 'admin') or admin_root %}
                     <span class="text-xs font-medium bg-yellow-300 text-yellow-900 px-2 py-1 rounded">Admin</span>
                     {% endif %}
                 </div>
@@ -34,7 +34,9 @@
 
                 <!-- RIGHT: User menu (single compact element) -->
                 <div class="flex items-center space-x-3">
-                    {% if current_user %}
+                    {% if admin_root %}
+                      <div class="text-sm font-medium">{{ admin_name or 'root' }}</div>
+                    {% elif current_user %}
                     <div x-data="{openUser:false}" class="relative">
                         <button @click="openUser = !openUser" :aria-expanded="openUser.toString()" aria-haspopup="true" aria-label="Open user menu" class="focus-visible:shadow-outline avatar" title="{{ current_user.name or current_user.email }}">{{ (current_user.name or current_user.email)[0]|upper }}</button>
                         <div x-show="openUser" x-transition @click.away="openUser=false" class="user-dropdown origin-top-right absolute right-0 mt-2 w-52 rounded-md shadow-lg z-50">
