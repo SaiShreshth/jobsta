@@ -24,3 +24,4 @@
 - [x] TASK-21 Auth UI Fixes & Admin Route
 - [x] TASK-22 Mobile Nav & Settings Page
 - [x] TASK-23 Routing fixes and verification
+- [x] TASK-24 UI/UX: theme & mobile nav improvements
