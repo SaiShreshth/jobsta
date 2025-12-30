@@ -22,3 +22,4 @@
 - [x] TASK-19 Documentation
 - [x] TASK-20 FINAL COMPLETE
 - [x] TASK-21 Auth UI Fixes & Admin Route
+- [x] TASK-22 Mobile Nav & Settings Page

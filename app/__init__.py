@@ -57,8 +57,12 @@ def create_app(config_class=Config):
 
     @app.route('/')
     def index():
-        from flask import render_template
-        return render_template('index.html')
+        from flask import redirect, url_for
+        from .utils.auth import get_current_user
+        if get_current_user():
+            return redirect(url_for('users.dashboard', _external=True))
+        else:
+            return redirect(url_for('auth.login', _external=True))
 
     @app.route('/admin')
     def admin():

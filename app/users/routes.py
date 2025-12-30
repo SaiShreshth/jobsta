@@ -7,11 +7,28 @@ from flask_mail import Message
 
 bp = Blueprint('users', __name__)
 
-@bp.route('/dashboard')
+@bp.route('/jobs')
 @login_required
-def dashboard():
+def jobs():
     jobs = Job.query.all()
-    return render_template('users/dashboard.html', jobs=jobs)
+    return render_template('users/jobs.html', jobs=jobs)
+
+@bp.route('/settings')
+@login_required
+def settings():
+    user = get_current_user()
+    # Placeholder stats
+    total_applications = Application.query.filter_by(user_id=user.id).count()
+    # For monthly, assume current month
+    from datetime import datetime
+    current_month = datetime.utcnow().month
+    current_year = datetime.utcnow().year
+    monthly_applications = Application.query.filter(
+        Application.user_id == user.id,
+        db.extract('month', Application.created_at) == current_month,
+        db.extract('year', Application.created_at) == current_year
+    ).count()
+    return render_template('users/settings.html', user=user, total_applications=total_applications, monthly_applications=monthly_applications)
 
 @bp.route('/job/<int:job_id>')
 @login_required
