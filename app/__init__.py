@@ -66,7 +66,7 @@ def create_app(config_class=Config):
 
     @app.route('/admin')
     def admin():
-        from flask import request, make_response
+        from flask import request, make_response, render_template
         auth = request.authorization
         if not auth or auth.username != 'root' or auth.password != 'msrit@123':
             response = make_response('Unauthorized', 401)

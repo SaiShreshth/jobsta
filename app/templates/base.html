@@ -11,83 +11,80 @@
 <body class="min-h-screen" x-data="{ open: false }">
     {% block nav %}
     <a class="sr-only focus:not-sr-only" href="#main">Skip to content</a>
-    <nav class="site-nav text-white shadow-lg" role="navigation" aria-label="Main navigation">
+    <nav class="site-nav shadow" role="navigation" aria-label="Main navigation">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex">
-                    <div class="flex-shrink-0 flex items-center">
-                        <h1 class="text-xl font-bold">MSRIT Job Portal</h1>
-                    </div>
-                    <!-- Desktop: show user info -->
-                    <div class="hidden md:flex items-center ml-4 nav-links">
-                        {% if current_user %}
-                        <div class="mr-3 text-sm">Hello, <strong>{{ current_user.name or current_user.email }}</strong></div>
-                        <div x-data="{openProfile:false}" class="relative">
-                          <button @click="openProfile = !openProfile" class="avatar" :aria-expanded="openProfile.toString()" aria-haspopup="true" aria-label="Open profile menu">{{ (current_user.name or current_user.email)[0]|upper }}</button>
-                          <div x-show="openProfile" x-transition @click.away="openProfile=false" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg z-50">
-                            <div class="card p-3 text-sm">
-                              <div class="font-medium">{{ current_user.name or current_user.email }}</div>
-                              <div class="text-xs text-gray-500">{{ current_user.email }}</div>
-                              <div class="mt-3 space-y-1">
-                                <a href="{{ url_for('users.settings') }}" @click="openProfile=false" class="block px-2 py-1 rounded hover:bg-gray-100">Settings</a>
-                                <a href="{{ url_for('auth.change_password') }}" @click="openProfile=false" class="block px-2 py-1 rounded hover:bg-gray-100">Change Password</a>
-                                <button id="theme-toggle-dropdown" class="theme-toggle w-full text-left px-2 py-1 rounded">Toggle theme</button>
-                                <a href="{{ url_for('auth.logout') }}" @click="openProfile=false" class="block px-2 py-1 text-red-600 rounded hover:bg-gray-100">Logout</a>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-                <!-- Desktop Navigation -->
-                <div class="hidden md:flex items-center space-x-4 nav-links">
-                    <a href="{{ url_for('users.dashboard') }}" {% if request.endpoint == 'users.dashboard' %}aria-current="page"{% endif %} class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">Home</a>
-                    {% if current_user %}
-                    <a href="{{ url_for('users.jobs') }}" {% if request.endpoint == 'users.jobs' %}aria-current="page"{% endif %} class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">Jobs</a>
-                    <a href="{{ url_for('users.applications') }}" {% if request.endpoint == 'users.applications' %}aria-current="page"{% endif %} class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">My Applications</a>
-                    <a href="{{ url_for('users.notifications') }}" {% if request.endpoint == 'users.notifications' %}aria-current="page"{% endif %} class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">Notifications</a>
-                    <a href="{{ url_for('users.settings') }}" {% if request.endpoint == 'users.settings' %}aria-current="page"{% endif %} class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">Settings</a>
-                    <button id="theme-toggle" class="theme-toggle ml-2" aria-label="Toggle theme">🌙</button>
-                    <a href="{{ url_for('auth.logout') }}" class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
-                    {% else %}
-                    <a href="{{ url_for('auth.register') }}" class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">Register</a>
-                    <a href="{{ url_for('auth.login') }}" class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">Login</a>
+            <div class="flex items-center justify-between" style="height:var(--header-h,3.5rem)">
+                <!-- LEFT: App title -->
+                <div class="flex items-center space-x-3">
+                    <a href="{{ url_for('users.dashboard') }}" class="text-lg font-semibold leading-none text-inherit no-underline">MSRIT Job Portal</a>
+                    {% if current_user and current_user.role == 'admin' %}
+                    <span class="text-xs font-medium bg-yellow-300 text-yellow-900 px-2 py-1 rounded">Admin</span>
                     {% endif %}
                 </div>
-                <!-- Mobile menu button -->
-                <div class="md:hidden flex items-center">
-                    <button @click="open = !open" :aria-expanded="open" aria-controls="mobile-menu" class="text-white hover:text-gray-300 focus:outline-none focus:text-gray-300" aria-label="Open menu">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path x-show="!open" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                            <path x-show="open" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
+
+                <!-- CENTER: Primary nav (max 4 items) -->
+                <div class="hidden md:flex items-center space-x-4 nav-links" role="menubar" aria-label="Primary navigation">
+                    <a href="{{ url_for('users.dashboard') }}" {% if request.endpoint == 'users.dashboard' %}aria-current="page"{% endif %} class="px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                    {% if current_user %}
+                      <a href="{{ url_for('users.jobs') }}" {% if request.endpoint == 'users.jobs' %}aria-current="page"{% endif %} class="px-3 py-2 rounded-md text-sm font-medium">Jobs</a>
+                      <a href="{{ url_for('users.applications') }}" {% if request.endpoint == 'users.applications' %}aria-current="page"{% endif %} class="px-3 py-2 rounded-md text-sm font-medium">Applications</a>
+                      <a href="{{ url_for('users.notifications') }}" {% if request.endpoint == 'users.notifications' %}aria-current="page"{% endif %} class="px-3 py-2 rounded-md text-sm font-medium">Notifications</a>
+                    {% endif %}
+                </div>
+
+                <!-- RIGHT: User menu (single compact element) -->
+                <div class="flex items-center space-x-3">
+                    {% if current_user %}
+                    <div x-data="{openUser:false}" class="relative">
+                        <button @click="openUser = !openUser" :aria-expanded="openUser.toString()" aria-haspopup="true" aria-label="Open user menu" class="focus-visible:shadow-outline avatar" title="{{ current_user.name or current_user.email }}">{{ (current_user.name or current_user.email)[0]|upper }}</button>
+                        <div x-show="openUser" x-transition @click.away="openUser=false" class="origin-top-right absolute right-0 mt-2 w-52 rounded-md shadow-lg z-50">
+                            <div class="card p-3 text-sm">
+                                <div class="font-medium">{{ current_user.name or current_user.email }}</div>
+                                <div class="text-xs text-muted">{{ current_user.email }}</div>
+                                <div class="mt-3 space-y-1">
+                                    <a href="{{ url_for('users.settings') }}" @click="openUser=false" class="block px-2 py-1 rounded hover:bg-gray-100">Settings</a>
+                                    <button @click="(function(){openUser=false; window.toggleTheme && window.toggleTheme();})()" class="theme-toggle block w-full text-left px-2 py-1 rounded">Toggle theme</button>
+                                    <a href="{{ url_for('auth.logout') }}" @click="openUser=false" class="block px-2 py-1 text-red-600 rounded hover:bg-gray-100">Logout</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="hidden md:flex items-center space-x-2">
+                        <a href="{{ url_for('auth.register') }}" class="px-3 py-2 rounded-md text-sm font-medium">Register</a>
+                        <a href="{{ url_for('auth.login') }}" class="px-3 py-2 rounded-md text-sm font-medium">Login</a>
+                    </div>
+                    {% endif %}
+
+                    <!-- mobile menu button -->
+                    <div class="md:hidden flex items-center">
+                        <button @click="open = !open" :aria-expanded="open" aria-controls="mobile-menu" class="focus:outline-none text-inherit" aria-label="Open menu">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path x-show="!open" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                                <path x-show="open" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
+
         <!-- Mobile Navigation Menu -->
         <div x-show="open" id="mobile-menu" class="md:hidden" x-transition>
-            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-blue-700 mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 mobile-menu">
+                <a href="{{ url_for('users.dashboard') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium">Home</a>
                 {% if current_user %}
-                <div class="px-3 py-3 border-b border-blue-600">
-                  <div class="text-sm font-medium">{{ current_user.name or current_user.email }}</div>
-                  <div class="text-xs text-gray-200">{{ current_user.email }}</div>
-                  <div class="mt-2">
-                    <button id="theme-toggle-mobile" class="theme-toggle" aria-label="Toggle theme">🌙</button>
-                  </div>
+                <a href="{{ url_for('users.jobs') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium">Jobs</a>
+                <a href="{{ url_for('users.applications') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium">Applications</a>
+                <a href="{{ url_for('users.notifications') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium">Notifications</a>
+                <div class="border-t pt-2 mt-2">
+                  <a href="{{ url_for('users.settings') }}" @click="open=false" class="block px-3 py-2 rounded-md text-base font-medium">Settings</a>
+                  <button @click="(function(){open=false; window.toggleTheme && window.toggleTheme();})()" class="theme-toggle block px-3 py-2 rounded-md text-base font-medium text-left">Toggle theme</button>
+                  <a href="{{ url_for('auth.logout') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium text-red-600">Logout</a>
                 </div>
-                {% endif %}
-                <a href="{{ url_for('users.dashboard') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800">Home</a>
-                {% if current_user %}
-                <a href="{{ url_for('users.jobs') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800">Jobs</a>
-                <a href="{{ url_for('users.applications') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800">My Applications</a>
-                <a href="{{ url_for('users.notifications') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800">Notifications</a>
-                <a href="{{ url_for('users.settings') }}" {% if request.endpoint == 'users.settings' %}aria-current="page"{% endif %} @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800">Settings</a>
-                <a href="{{ url_for('auth.logout') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800">Logout</a>
                 {% else %}
-                <a href="{{ url_for('auth.register') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800">Register</a>
-                <a href="{{ url_for('auth.login') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800">Login</a>
+                <a href="{{ url_for('auth.register') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium">Register</a>
+                <a href="{{ url_for('auth.login') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium">Login</a>
                 {% endif %}
             </div>
         </div>
@@ -106,16 +103,13 @@
         {% block content %}{% endblock %}
     </main>
     <script>
-      // Theme toggle logic
+      // Simplified theme toggle: single function exposed to global scope
       (function(){
         const root = document.documentElement;
-        const themeToggle = document.getElementById('theme-toggle');
-        const themeToggleMobile = document.getElementById('theme-toggle-mobile');
         function applyTheme(t){
           if(t === 'dark') root.classList.add('dark'); else root.classList.remove('dark');
-          // update icon
-          if(themeToggle) themeToggle.textContent = t === 'dark' ? '☀️' : '🌙';
-          if(themeToggleMobile) themeToggleMobile.textContent = t === 'dark' ? '☀️' : '🌙';
+          // update any visible theme buttons text/icon
+          document.querySelectorAll('.theme-toggle').forEach(function(btn){ btn.textContent = t === 'dark' ? '☀️' : '🌙'; });
         }
         const stored = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         applyTheme(stored);
@@ -125,11 +119,7 @@
           localStorage.setItem('theme', next);
           applyTheme(next);
         }
-        if(themeToggle) themeToggle.addEventListener('click', toggle);
-        if(themeToggleMobile) themeToggleMobile.addEventListener('click', function(){ toggle(); document.querySelector('[x-data]').__x.$data.open = false; });
-        const themeToggleDropdown = document.getElementById('theme-toggle-dropdown');
-        if(themeToggleDropdown) themeToggleDropdown.addEventListener('click', function(){ toggle(); document.querySelector('[x-data]').__x.$data.open = false; var p = document.querySelector('[x-data] > div > div > div > div'); if(p && p.__x) p.__x.$data.openProfile = false; });
-        // expose toggle for compatibility
+        // expose toggle for use in templates
         window.toggleTheme = toggle;
       })();
     </script>
