@@ -21,3 +21,4 @@
 - [x] TASK-18 Deployment
 - [x] TASK-19 Documentation
 - [x] TASK-20 FINAL COMPLETE
+- [x] TASK-21 Auth UI Fixes & Admin Route

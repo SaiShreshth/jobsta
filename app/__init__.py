@@ -60,6 +60,16 @@ def create_app(config_class=Config):
         from flask import render_template
         return render_template('index.html')
 
+    @app.route('/admin')
+    def admin():
+        from flask import request, make_response
+        auth = request.authorization
+        if not auth or auth.username != 'root' or auth.password != 'msrit@123':
+            response = make_response('Unauthorized', 401)
+            response.headers['WWW-Authenticate'] = 'Basic realm="Admin"'
+            return response
+        return render_template('admin_dashboard.html')
+
     @app.context_processor
     def inject_current_user():
         from .utils.auth import get_current_user

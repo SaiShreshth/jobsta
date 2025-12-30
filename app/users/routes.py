@@ -30,7 +30,7 @@ def apply(job_id):
     existing = Application.query.filter_by(user_id=user.id, job_id=job_id).first()
     if existing:
         flash('Already applied')
-        return redirect(url_for('users.job_detail', job_id=job_id))
+        return redirect(url_for('users.job_detail', job_id=job_id, _external=True))
     application = Application(user_id=user.id, job_id=job_id)
     db.session.add(application)
     db.session.commit()
@@ -39,7 +39,7 @@ def apply(job_id):
     msg.body = f'You have successfully applied for {job.title} at {job.company}.'
     mail.send(msg)
     flash('Applied successfully')
-    return redirect(url_for('users.dashboard'))
+    return redirect(url_for('users.dashboard', _external=True))
 
 @bp.route('/review/<int:job_id>', methods=['POST'])
 @login_required
@@ -49,14 +49,14 @@ def review(job_id):
     application = Application.query.filter_by(user_id=user.id, job_id=job_id).first()
     if not application:
         flash('You must apply first')
-        return redirect(url_for('users.job_detail', job_id=job_id))
+        return redirect(url_for('users.job_detail', job_id=job_id, _external=True))
     rating = int(request.form['rating'])
     comment = request.form.get('comment')
     review_obj = Review(job_id=job_id, user_id=user.id, rating=rating, comment=comment)
     db.session.add(review_obj)
     db.session.commit()
     flash('Review submitted')
-    return redirect(url_for('users.job_detail', job_id=job_id))
+    return redirect(url_for('users.job_detail', job_id=job_id, _external=True))
 
 @bp.route('/applications')
 @login_required
