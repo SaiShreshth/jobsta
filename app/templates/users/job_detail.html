@@ -2,84 +2,180 @@
 
 {% block content %}
 
-<h1 class="text-2xl font-bold mb-4">{{ job.title }}</h1>
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">{{ job.title }}</h1>
 
-<p class="mb-2"><strong>Company:</strong> {{ job.company }}</p>
+    <div class="card p-6 mb-6">
+        <div class="flex items-start justify-between mb-4">
+            <div>
+                <p class="mb-2"><strong>Company:</strong> {{ job.company }}</p>
+                <p class="mb-2"><strong>Location:</strong> {{ job.location }}</p>
+                {% if job.salary %}
+                <p class="mb-2"><strong>Salary:</strong> {{ job.salary }}</p>
+                {% endif %}
+            </div>
+            {% if deadline_warning %}
+            <span class="px-3 py-1 rounded text-sm font-semibold {% if deadline_warning == 'urgent' %}bg-error text-white{% else %}bg-warning text-warning{% endif %}">
+                {% if days_until_deadline == 0 %}
+                Deadline: Today!
+                {% elif days_until_deadline == 1 %}
+                Deadline: Tomorrow
+                {% else %}
+                {{ days_until_deadline }} days left
+                {% endif %}
+            </span>
+            {% elif job.deadline is defined and job.deadline %}
+            <span class="px-3 py-1 rounded text-sm text-muted">
+                Deadline: {{ job.deadline.strftime('%Y-%m-%d') }}
+            </span>
+            {% endif %}
+        </div>
 
-<p class="mb-2"><strong>Location:</strong> {{ job.location }}</p>
+        <div class="mb-4">
+            <h3 class="font-semibold mb-2">Description</h3>
+            {% if job.description %}
+                <div class="text-sm text-gray-700 dark:text-gray-300">
+                    {{ job.description
+                        |replace('&lt;br&gt;','<br>')
+                        |replace('&lt;br/&gt;','<br>')
+                        |replace('&lt;br /&gt;','<br>')
+                        |replace('\r\n','<br>')
+                        |replace('\n','<br>')
+                        |safe }}
+                </div>
+            {% else %}
+                <em class="text-muted">No description provided.</em>
+            {% endif %}
+        </div>
 
-<p class="mb-2"><strong>Salary:</strong> {{ job.salary }}</p>
+        {% if applied %}
+        <div class="mb-4 p-3 bg-success border border-success rounded">
+            <p class="text-success font-semibold">✓ You have already applied for this job</p>
+            {% if job.apply_url is defined and job.apply_url %}
+            <a href="{{ job.apply_url }}" target="_blank" class="btn-primary mt-2 inline-block">Complete Application</a>
+            {% endif %}
+            {% if job.application_email %}
+            <a href="https://mail.google.com/mail/?view=cm&fs=1&to={{ job.application_email }}" target="_blank" rel="noopener" class="ml-2 inline-block px-3 py-2 border rounded bg-white hover:bg-gray-50">Write Email</a>
+            {% endif %}
+        </div>
+        {% else %}
+        <form method="post" action="{{ url_for('users.apply', job_id=job.id) }}">
+            <button type="submit" class="btn-primary">Apply Now</button>
+            {% if job.application_email %}
+            <a href="https://mail.google.com/mail/?view=cm&fs=1&to={{ job.application_email }}" target="_blank" rel="noopener" class="ml-2 inline-block px-3 py-2 border rounded bg-white hover:bg-gray-50">Write Email</a>
+            {% endif %}
+            <p class="text-sm text-muted mt-2">You will be redirected to the company's application page</p>
+        </form>
+        {% endif %}
+    </div>
 
-<p class="mb-4">{{ job.description }}</p>
+    <div class="card p-6 mb-6">
+        <h2 class="text-xl font-bold mb-4">Reviews</h2>
+        
+        {% if reviews %}
+        <div class="space-y-4">
+            {% for review in reviews %}
+            <div class="border-b border-muted-border pb-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-lg font-semibold">{{ review.rating }}/5</span>
+                    <span class="text-sm text-muted">
+                        {% for i in range(5) %}
+                            {% if i < review.rating %}★{% else %}☆{% endif %}
+                        {% endfor %}
+                    </span>
+                </div>
+                {% if review.comment %}
+                <p class="text-sm">{{ review.comment }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">No reviews yet</p>
+        {% endif %}
 
-{% if applied %}
+        {% if applied %}
+        <div class="mt-6 pt-6 border-t border-muted-border">
+            {% if user_review %}
+            <p class="mb-4 text-muted">You have already reviewed this job. <button onclick="showReviewModal()" class="text-primary underline">Edit your review</button></p>
+            {% else %}
+            <button onclick="showReviewModal()" class="btn-primary">Leave a Review</button>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
 
-<p class="text-green-600">You have already applied for this job.</p>
-
-{% else %}
-
-<form method="post" action="{{ url_for('users.apply', job_id=job.id) }}">
-
-    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Apply</button>
-
-</form>
-
-{% endif %}
-
-<h2 class="text-xl font-bold mb-2">Reviews</h2>
-
-{% for review in reviews %}
-
-<div class="bg-gray-100 p-4 rounded mb-2">
-
-    <p>Rating: {{ review.rating }}/5</p>
-
-    <p>{{ review.comment }}</p>
-
+    <a href="{{ url_for('users.dashboard') }}" class="text-primary">← Back to Dashboard</a>
 </div>
 
-{% endfor %}
-
-{% if applied %}
-
-<h2 class="text-xl font-bold mb-2">Leave a Review</h2>
-
-<form method="post" action="{{ url_for('users.review', job_id=job.id) }}" class="max-w-lg">
-
-    <div class="mb-4">
-
-        <label for="rating" class="block text-sm font-medium text-gray-700">Rating:</label>
-
-        <select name="rating" id="rating" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-
-            <option value="1">1</option>
-
-            <option value="2">2</option>
-
-            <option value="3">3</option>
-
-            <option value="4">4</option>
-
-            <option value="5">5</option>
-
-        </select>
-
+<!-- Review Modal -->
+<div id="reviewModal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeReviewModal()"></div>
+    <div class="modal-content">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold">{% if user_review %}Edit{% else %}Leave{% endif %} Review</h3>
+            <button onclick="closeReviewModal()" class="text-2xl text-muted hover:text-text">&times;</button>
+        </div>
+        <form id="reviewForm" method="post" action="{{ url_for('users.review', job_id=job.id) }}">
+            <div class="mb-4">
+                <label for="rating" class="block text-sm font-medium mb-2">Rating:</label>
+                <select name="rating" id="rating" class="block w-full px-3 py-2 border border-muted-border rounded-md" required>
+                    <option value="1" {% if user_review and user_review.rating == 1 %}selected{% endif %}>1 - Poor</option>
+                    <option value="2" {% if user_review and user_review.rating == 2 %}selected{% endif %}>2 - Fair</option>
+                    <option value="3" {% if user_review and user_review.rating == 3 %}selected{% endif %}>3 - Good</option>
+                    <option value="4" {% if user_review and user_review.rating == 4 %}selected{% endif %}>4 - Very Good</option>
+                    <option value="5" {% if user_review and user_review.rating == 5 %}selected{% endif %}>5 - Excellent</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label for="comment" class="block text-sm font-medium mb-2">Comment:</label>
+                <textarea name="comment" id="comment" class="block w-full px-3 py-2 border border-muted-border rounded-md" rows="4">{% if user_review %}{{ user_review.comment }}{% endif %}</textarea>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="btn-primary">Submit Review</button>
+                <button type="button" onclick="closeReviewModal()" class="px-4 py-2 border border-muted-border rounded hover:bg-hover-bg">Cancel</button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <div class="mb-4">
+<script>
+function showReviewModal() {
+    document.getElementById('reviewModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
 
-        <label for="comment" class="block text-sm font-medium text-gray-700">Comment:</label>
+function closeReviewModal() {
+    document.getElementById('reviewModal').classList.add('hidden');
+    document.body.style.overflow = '';
+}
 
-        <textarea name="comment" id="comment" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
-
-    </div>
-
-    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Submit Review</button>
-
-</form>
-
-{% endif %}
-
-<a href="{{ url_for('users.dashboard') }}" class="text-blue-500">Back to Dashboard</a>
+// Handle form submission via AJAX
+document.getElementById('reviewForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeReviewModal();
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to submit review');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+});
+</script>
 
 {% endblock %}

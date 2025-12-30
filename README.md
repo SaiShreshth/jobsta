@@ -1,4 +1,4 @@
-# MSRIT Job Portal
+# Jobsta
 
 A production-grade web application for job postings at MSRIT, built with Flask, PostgreSQL, and Tailwind CSS.
 

@@ -24,7 +24,10 @@
 
 </div>
 
-<a href="{{ url_for('admin.new_job') }}" class="button-primary mb-4 inline-block">Create New Job</a>
+<div class="flex items-center justify-between mb-4">
+    <a href="{{ url_for('admin.new_job') }}" class="button-primary mb-0 inline-block">Create New Job</a>
+    <div class="text-sm text-muted">Signed in as <strong>root</strong></div>
+</div>
 
 <h2 class="text-xl font-bold mb-2">Jobs</h2>
 
@@ -34,11 +37,27 @@
 
 <div class="card p-4 rounded shadow">
 
-    <h3 class="text-lg font-bold">{{ job.title }}</h3>
+    <div class="flex items-start justify-between mb-2">
+        <h3 class="text-lg font-bold">{{ job.title }}</h3>
+        {% if job.status is defined %}
+        <span class="text-xs px-2 py-1 rounded {% if job.status == 'active' %}bg-success text-success{% elif job.status == 'archived' %}bg-warning text-warning{% else %}bg-error text-error{% endif %}">
+            {{ job.status }}
+        </span>
+        {% endif %}
+    </div>
 
     <p class="text-gray-600">{{ job.company }}</p>
 
     <p class="text-gray-600">{{ job.location }}</p>
+    
+    {% if job.deadline is defined and job.deadline %}
+    <p class="text-sm text-muted mt-2">Deadline: {{ job.deadline.strftime('%Y-%m-%d') }}</p>
+    {% endif %}
+
+    <div class="mt-4 flex gap-2">
+        <a href="{{ url_for('admin.edit_job', job_id=job.id) }}" class="btn-primary text-sm py-1 px-3">Edit</a>
+        <a href="{{ url_for('admin.delete_job', job_id=job.id) }}" class="text-error text-sm py-1 px-3 border border-error rounded hover:bg-error hover:text-white">Delete</a>
+    </div>
 
 </div>
 

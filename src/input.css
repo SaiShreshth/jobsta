@@ -1,3 +1,28 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Ensure form control text is black in dark mode for readability */
+.dark input,
+.dark textarea,
+.dark select,
+.dark .form-input,
+.dark .form-textarea,
+.dark .form-select {
+	color: #000 !important;
+	-webkit-text-fill-color: #000 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder,
+.dark select::placeholder,
+.dark .form-input::placeholder,
+.dark .form-textarea::placeholder {
+	color: rgba(0,0,0,0.6) !important;
+}
+
+/* also ensure any inline contenteditable textboxes are handled */
+.dark [contenteditable] {
+	color: #000 !important;
+	-webkit-text-fill-color: #000 !important;
+}

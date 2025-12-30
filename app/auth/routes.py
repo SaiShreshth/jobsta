@@ -43,7 +43,7 @@ def register():
         db.session.commit()
         # Send verification email via SMTP
         login_url = url_for('auth.verify', token=token_str, _external=True)
-        subject = 'Verify your MSRIT Job Portal account'
+        subject = 'Verify your Jobsta account'
         body = f'Click here to verify your account: {login_url}'
         sender_addr = current_app.config.get('MAIL_DEFAULT_SENDER')
         sender_name = current_app.config.get('MAIL_SENDER_NAME', 'jobsta')

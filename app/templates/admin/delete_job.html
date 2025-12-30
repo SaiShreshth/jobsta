@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1 class="text-2xl font-bold mb-4">Delete Job: {{ job.title }}</h1>
+
+<div class="card p-6 mb-6">
+    <p class="mb-2"><strong>Company:</strong> {{ job.company }}</p>
+    <p class="mb-2"><strong>Location:</strong> {{ job.location }}</p>
+    <p class="mb-4"><strong>Applications:</strong> {{ app_count }} application(s)</p>
+</div>
+
+<form method="post" class="max-w-lg">
+
+    {{ form.hidden_tag() }}
+
+    <div class="mb-4">
+
+        {{ form.action.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+
+        {% for subfield in form.action %}
+        <div class="mb-3 p-3 border rounded hover:bg-gray-50">
+            <label class="flex items-start">
+                {{ subfield(class="mt-1 mr-3") }}
+                <span class="text-sm">{{ subfield.label.text }}</span>
+            </label>
+        </div>
+        {% endfor %}
+
+    </div>
+
+    <div class="flex gap-2">
+        {{ form.submit(class="btn-primary bg-error hover:bg-error") }}
+        <a href="{{ url_for('admin.index') }}" class="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100">Cancel</a>
+    </div>
+
+</form>
+
+{% endblock %}
+
+

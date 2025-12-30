@@ -41,7 +41,7 @@ def create_app(config_class=Config):
     app.register_blueprint(auth_bp)
 
     from .admin import bp as admin_bp
-    app.register_blueprint(admin_bp)
+    app.register_blueprint(admin_bp, url_prefix='/admin')
 
     from .jobs import bp as jobs_bp
     app.register_blueprint(jobs_bp)
@@ -64,19 +64,23 @@ def create_app(config_class=Config):
         else:
             return redirect(url_for('auth.login'))
 
-    @app.route('/admin')
-    def admin():
-        from flask import request, make_response, render_template
-        auth = request.authorization
-        if not auth or auth.username != 'root' or auth.password != 'msrit@123':
-            response = make_response('Unauthorized', 401)
-            response.headers['WWW-Authenticate'] = 'Basic realm="Admin"'
-            return response
-        return render_template('admin_dashboard.html')
+    # Admin blueprint serves admin routes under /admin
 
     @app.context_processor
     def inject_current_user():
         from .utils.auth import get_current_user
-        return dict(current_user=get_current_user())
+        # detect mobile user-agent roughly and provide flags for templates
+        from flask import request
+        cu = get_current_user()
+        ua = request.user_agent.string or ''
+        is_mobile = False
+        try:
+            key = ua.lower()
+            if 'mobile' in key or 'iphone' in key or 'android' in key or 'ipad' in key:
+                is_mobile = True
+        except Exception:
+            is_mobile = False
+        is_admin = bool(cu and getattr(cu, 'role', None) == 'admin')
+        return dict(current_user=cu, is_mobile=is_mobile, is_admin=is_admin)
 
     return app

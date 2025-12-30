@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">Recommendations</h1>
+
+    <div class="card p-4 mb-6">
+        <form method="post">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.title.label(class="block text-sm font-medium text-gray-700") }}
+                {{ form.title(class=form_input_classes, placeholder="Short title") }}
+            </div>
+            <div class="mb-3">
+                {{ form.body.label(class="block text-sm font-medium text-gray-700") }}
+                {{ form.body(class=form_input_classes, rows="4", placeholder="Write your recommendation") }}
+            </div>
+            <div>
+                {{ form.submit(class="btn-primary") }}
+            </div>
+        </form>
+    </div>
+
+    <div class="space-y-4">
+        {% for rec in recommendations %}
+        <div class="card p-4 rounded shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="font-semibold">{{ rec.title }}</h3>
+                    <p class="text-sm text-muted">Submitted on {{ rec.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                </div>
+            </div>
+            <div class="mt-3 text-sm">
+                {{ rec.body }}
+            </div>
+        </div>
+        {% else %}
+        <div class="card p-6 text-center text-muted">You haven't submitted any recommendations yet.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

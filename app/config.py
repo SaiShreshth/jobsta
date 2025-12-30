@@ -7,8 +7,9 @@ class Config:
     MAIL_SERVER = os.environ.get('EMAIL_SERVER') or 'smtp.gmail.com'
     MAIL_PORT = int(os.environ.get('EMAIL_PORT') or 587)
     MAIL_USE_TLS = True
-    MAIL_USERNAME = os.environ.get('EMAIL_USERNAME')
-    MAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD')
+    # Accept either MAIL_* or EMAIL_* env var names for compatibility with .env
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or os.environ.get('EMAIL_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or os.environ.get('EMAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or 'noreply@jobsta.com'
     # In development you may set MAIL_SUPPRESS_SEND=True to avoid sending
     MAIL_SUPPRESS_SEND = os.environ.get('MAIL_SUPPRESS_SEND', 'False').lower() in ('1', 'true', 'yes')

@@ -2,22 +2,189 @@
 
 {% block content %}
 
-<h1 class="text-2xl font-bold mb-4">My Applications</h1>
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">My Applications</h1>
 
-{% for application in applications %}
+    {% if applications %}
+    <div class="space-y-4">
+        {% for application in applications %}
+        <div class="application-card card p-4 rounded shadow mb-4 flex items-center justify-between gap-4"
+             data-application-id="{{ application.id }}">
+            <div class="flex-1 cursor-pointer" onclick="showApplicationDetails({{ application.id }})">
+                <h3 class="text-lg font-bold mb-1">{{ application.job.title }}</h3>
+                <p class="text-muted mb-2">{{ application.job.company }}</p>
+                <div class="flex items-center gap-4 text-sm">
+                    <span class="px-2 py-1 rounded text-xs font-semibold 
+                        {% if application.status == 'accepted' %}bg-success text-success
+                        {% elif application.status == 'rejected' %}bg-error text-error
+                        {% else %}bg-warning text-warning{% endif %}">
+                        {{ application.status|title }}
+                    </span>
+                    <span class="text-muted">Applied: {{ application.applied_at.strftime('%Y-%m-%d') }}</span>
+                </div>
+            </div>
 
-<div class="card p-4 rounded shadow mb-4">
-
-    <h3 class="text-lg font-bold">{{ application.job.title }}</h3>
-
-    <p class="text-gray-600">{{ application.job.company }}</p>
-
-    <p class="text-gray-600">Status: {{ application.status }}</p>
-
-    <p class="text-gray-600">Applied on: {{ application.applied_at.strftime('%Y-%m-%d') }}</p>
-
+            <div class="flex-shrink-0 flex items-center gap-2">
+                {% if application.status != 'accepted' %}
+                <button class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-green-300 ml-2" onclick="updateStatus(event, {{ application.id }}, 'accepted')">Accept</button>
+                {% endif %}
+                {% if application.status != 'rejected' %}
+                <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-red-300 ml-2" onclick="updateStatus(event, {{ application.id }}, 'rejected')">Reject</button>
+                {% endif %}
+                <button class="text-primary text-sm" onclick="showApplicationDetails({{ application.id }})">View →</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card p-8 text-center">
+        <p class="text-muted">You haven't applied to any jobs yet.</p>
+        <a href="{{ url_for('users.jobs') }}" class="btn-primary mt-4 inline-block">Browse Jobs</a>
+    </div>
+    {% endif %}
 </div>
 
-{% endfor %}
+<!-- Application Details Modal -->
+<div id="applicationModal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeApplicationModal()"></div>
+    <div class="modal-content">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold">Application Details</h3>
+            <button onclick="closeApplicationModal()" class="text-2xl text-muted hover:text-text">&times;</button>
+        </div>
+        <div id="applicationDetails">
+            <div class="text-center py-8">
+                <p class="text-muted">Loading...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showApplicationDetails(applicationId) {
+    const modal = document.getElementById('applicationModal');
+    const detailsDiv = document.getElementById('applicationDetails');
+    
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    
+    // Show loading
+    detailsDiv.innerHTML = '<div class="text-center py-8"><p class="text-muted">Loading...</p></div>';
+    
+    // Fetch application details
+    const detailsUrl = '{{ url_for("users.get_application_details", application_id=999) }}'.replace('999', applicationId);
+    fetch(detailsUrl)
+        .then(response => response.json())
+        .then(data => {
+            const job = data.job;
+            const app = data.application;
+            const review = data.review;
+            
+            let deadlineBadge = '';
+            if (job.deadline_warning === 'urgent') {
+                deadlineBadge = `<span class="px-3 py-1 rounded text-sm font-semibold bg-error text-white ml-2">
+                    ${job.days_until_deadline === 0 ? 'Deadline: Today!' : 
+                      job.days_until_deadline === 1 ? 'Deadline: Tomorrow' : 
+                      `${job.days_until_deadline} days left`}
+                </span>`;
+            } else if (job.deadline_warning === 'warning') {
+                deadlineBadge = `<span class="px-3 py-1 rounded text-sm font-semibold bg-warning text-warning ml-2">
+                    ${job.days_until_deadline} days left
+                </span>`;
+            } else if (job.deadline) {
+                deadlineBadge = `<span class="px-3 py-1 rounded text-sm text-muted ml-2">
+                    Deadline: ${new Date(job.deadline).toLocaleDateString()}
+                </span>`;
+            }
+            
+            let reviewSection = '';
+            if (review.exists) {
+                reviewSection = `
+                    <div class="mt-4 p-3 bg-success border border-success rounded">
+                        <p class="font-semibold text-success mb-1">Your Review</p>
+                        <p class="text-sm">Rating: ${review.rating}/5 ${'★'.repeat(review.rating)}${'☆'.repeat(5-review.rating)}</p>
+                        ${review.comment ? `<p class="text-sm mt-2">${review.comment}</p>` : ''}
+                    </div>
+                `;
+            } else {
+                reviewSection = `
+                    <div class="mt-4">
+                        <p class="text-muted text-sm">You haven't reviewed this job yet.</p>
+                        <a href="/job/${job.id}" class="btn-primary mt-2 inline-block text-sm">Leave a Review</a>
+                    </div>
+                `;
+            }
+            
+            detailsDiv.innerHTML = `
+                <div>
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h4 class="text-lg font-bold">${job.title}</h4>
+                            <p class="text-muted">${job.company}</p>
+                        </div>
+                        ${deadlineBadge}
+                    </div>
+                    
+                    <div class="space-y-2 mb-4 text-sm">
+                        ${job.location ? `<p><strong>Location:</strong> ${job.location}</p>` : ''}
+                        ${job.salary ? `<p><strong>Salary:</strong> ${job.salary}</p>` : ''}
+                        <p><strong>Status:</strong> 
+                            <span class="px-2 py-1 rounded text-xs font-semibold 
+                                ${app.status === 'accepted' ? 'bg-success text-success' : 
+                                  app.status === 'rejected' ? 'bg-error text-error' : 
+                                  'bg-warning text-warning'}">
+                                ${app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                            </span>
+                        </p>
+                        <p><strong>Applied:</strong> ${new Date(app.applied_at).toLocaleDateString()}</p>
+                    </div>
+                    
+                    <div class="mb-4 p-3 bg-surface rounded">
+                        <h5 class="font-semibold mb-2">Description</h5>
+                        <p class="text-sm whitespace-pre-wrap">${job.description}</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <a href="${job.apply_url}" target="_blank" class="btn-primary inline-block">Complete Application</a>
+                    </div>
+                    
+                    ${reviewSection}
+                </div>
+            `;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            detailsDiv.innerHTML = '<div class="text-center py-8"><p class="text-error">Failed to load application details.</p></div>';
+        });
+}
+
+function closeApplicationModal() {
+    document.getElementById('applicationModal').classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function updateStatus(e, applicationId, status) {
+    e.stopPropagation();
+    const url = '{{ url_for("users.set_application_status", application_id=999) }}'.replace('999', applicationId);
+    fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        body: JSON.stringify({ status })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // simple approach: reload the page to reflect ordering and badges
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to update status');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Failed to update status');
+    });
+}
+</script>
 
 {% endblock %}
