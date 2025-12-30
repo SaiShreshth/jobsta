@@ -25,3 +25,4 @@
 - [x] TASK-22 Mobile Nav & Settings Page
 - [x] TASK-23 Routing fixes and verification
 - [x] TASK-24 UI/UX: theme & mobile nav improvements
+- [x] TASK-25 Quick profile panel & theme refinements
