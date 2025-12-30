@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1 class="text-2xl font-bold mb-4">Job Listings</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+{% for job in jobs %}
+
+<div class="bg-white p-4 rounded shadow">
+
+    <h3 class="text-lg font-bold">{{ job.title }}</h3>
+
+    <p class="text-gray-600">{{ job.company }}</p>
+
+    <p class="text-gray-600">{{ job.location }}</p>
+
+    <a href="{{ url_for('users.job_detail', job_id=job.id) }}" class="text-blue-500">View Details</a>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+{% endblock %}

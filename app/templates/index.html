@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="text-center">
+
+    <h1 class="text-4xl font-bold mb-4">Welcome to MSRIT Job Portal</h1>
+
+    <p class="text-lg mb-8">Find your dream job at MSRIT.</p>
+
+    {% if current_user %}
+
+    <p>Hello, {{ current_user.email }}!</p>
+
+    {% if current_user.role == 'admin' %}
+
+    <a href="{{ url_for('admin.index') }}" class="bg-green-500 text-white px-4 py-2 rounded mr-4">Admin Dashboard</a>
+
+    {% endif %}
+
+    <a href="{{ url_for('users.dashboard') }}" class="bg-blue-500 text-white px-4 py-2 rounded">View Jobs</a>
+
+    {% else %}
+
+    <a href="{{ url_for('auth.login') }}" class="bg-blue-500 text-white px-4 py-2 rounded">Login</a>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

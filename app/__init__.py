@@ -4,7 +4,7 @@ from .config import Config
 from .extensions import db, migrate, mail, bcrypt
 
 def create_app(config_class=Config):
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), '..', 'static'))
     app.config.from_object(config_class)
 
     db.init_app(app)
@@ -32,5 +32,15 @@ def create_app(config_class=Config):
 
     from .notifications import bp as notifications_bp
     app.register_blueprint(notifications_bp)
+
+    @app.route('/')
+    def index():
+        from flask import render_template
+        return render_template('index.html')
+
+    @app.context_processor
+    def inject_current_user():
+        from .utils.auth import get_current_user
+        return dict(current_user=get_current_user())
 
     return app
