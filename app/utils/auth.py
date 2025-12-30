@@ -4,7 +4,11 @@ from app.extensions import bcrypt
 from datetime import datetime
 
 def get_current_user():
-    token = request.cookies.get('device_token')
+    try:
+        token = request.cookies.get('device_token')
+    except RuntimeError:
+        # No request context (e.g., during template rendering outside request)
+        return None
     if not token:
         return None
     # Find any non-expired device tokens for which the hashed value matches

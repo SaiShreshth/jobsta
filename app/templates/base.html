@@ -21,7 +21,21 @@
                     <div class="hidden md:flex items-center ml-4 nav-links">
                         {% if current_user %}
                         <div class="mr-3 text-sm">Hello, <strong>{{ current_user.name or current_user.email }}</strong></div>
-                        <div class="avatar">{{ (current_user.name or current_user.email)[0]|upper }}</div>
+                        <div x-data="{openProfile:false}" class="relative">
+                          <button @click="openProfile = !openProfile" class="avatar" :aria-expanded="openProfile.toString()" aria-haspopup="true" aria-label="Open profile menu">{{ (current_user.name or current_user.email)[0]|upper }}</button>
+                          <div x-show="openProfile" x-transition @click.away="openProfile=false" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg z-50">
+                            <div class="card p-3 text-sm">
+                              <div class="font-medium">{{ current_user.name or current_user.email }}</div>
+                              <div class="text-xs text-gray-500">{{ current_user.email }}</div>
+                              <div class="mt-3 space-y-1">
+                                <a href="{{ url_for('users.settings') }}" @click="openProfile=false" class="block px-2 py-1 rounded hover:bg-gray-100">Settings</a>
+                                <a href="{{ url_for('auth.change_password') }}" @click="openProfile=false" class="block px-2 py-1 rounded hover:bg-gray-100">Change Password</a>
+                                <button id="theme-toggle-dropdown" class="theme-toggle w-full text-left px-2 py-1 rounded">Toggle theme</button>
+                                <a href="{{ url_for('auth.logout') }}" @click="openProfile=false" class="block px-2 py-1 text-red-600 rounded hover:bg-gray-100">Logout</a>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                         {% endif %}
                     </div>
                 </div>
@@ -112,6 +126,10 @@
         }
         if(themeToggle) themeToggle.addEventListener('click', toggle);
         if(themeToggleMobile) themeToggleMobile.addEventListener('click', function(){ toggle(); document.querySelector('[x-data]').__x.$data.open = false; });
+        const themeToggleDropdown = document.getElementById('theme-toggle-dropdown');
+        if(themeToggleDropdown) themeToggleDropdown.addEventListener('click', function(){ toggle(); document.querySelector('[x-data]').__x.$data.open = false; var p = document.querySelector('[x-data] > div > div > div > div'); if(p && p.__x) p.__x.$data.openProfile = false; });
+        // expose toggle for compatibility
+        window.toggleTheme = toggle;
       })();
     </script>
 </body>
