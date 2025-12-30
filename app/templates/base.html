@@ -37,11 +37,19 @@
                     {% if current_user %}
                     <div x-data="{openUser:false}" class="relative">
                         <button @click="openUser = !openUser" :aria-expanded="openUser.toString()" aria-haspopup="true" aria-label="Open user menu" class="focus-visible:shadow-outline avatar" title="{{ current_user.name or current_user.email }}">{{ (current_user.name or current_user.email)[0]|upper }}</button>
-                        <div x-show="openUser" x-transition @click.away="openUser=false" class="origin-top-right absolute right-0 mt-2 w-52 rounded-md shadow-lg z-50">
+                        <div x-show="openUser" x-transition @click.away="openUser=false" class="user-dropdown origin-top-right absolute right-0 mt-2 w-52 rounded-md shadow-lg z-50">
                             <div class="card p-3 text-sm">
                                 <div class="font-medium">{{ current_user.name or current_user.email }}</div>
                                 <div class="text-xs text-muted">{{ current_user.email }}</div>
                                 <div class="mt-3 space-y-1">
+                                    <!-- Primary nav for mobile goes into dropdown -->
+                                    <div class="md:hidden">
+                                      <a href="{{ url_for('users.dashboard') }}" @click="openUser=false" class="block px-2 py-1 rounded">Home</a>
+                                      <a href="{{ url_for('users.jobs') }}" @click="openUser=false" class="block px-2 py-1 rounded">Jobs</a>
+                                      <a href="{{ url_for('users.applications') }}" @click="openUser=false" class="block px-2 py-1 rounded">Applications</a>
+                                      <a href="{{ url_for('users.notifications') }}" @click="openUser=false" class="block px-2 py-1 rounded">Notifications</a>
+                                      <hr class="my-2" />
+                                    </div>
                                     <a href="{{ url_for('users.settings') }}" @click="openUser=false" class="block px-2 py-1 rounded hover:bg-gray-100">Settings</a>
                                     <button @click="(function(){openUser=false; window.toggleTheme && window.toggleTheme();})()" class="theme-toggle block w-full text-left px-2 py-1 rounded">Toggle theme</button>
                                     <a href="{{ url_for('auth.logout') }}" @click="openUser=false" class="block px-2 py-1 text-red-600 rounded hover:bg-gray-100">Logout</a>

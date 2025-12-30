@@ -27,4 +27,4 @@
 - [x] TASK-24 UI/UX: theme & mobile nav improvements
 - [x] TASK-25 Quick profile panel & theme refinements
 - [ ] TASK-26 Theme polishing, accessibility and button standardization
-- [ ] TASK-27 Header refactor (STEP 1)
+- [x] TASK-27 Header refactor (STEP 1)
