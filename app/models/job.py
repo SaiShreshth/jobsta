@@ -7,7 +7,7 @@ class Job(db.Model):
     company = db.Column(db.String(100), nullable=False)
     location = db.Column(db.String(100))
     salary = db.Column(db.String(50))
-    posted_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    posted_by = db.Column(db.String(36), db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.now())
 
     # relationships

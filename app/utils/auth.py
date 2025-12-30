@@ -7,9 +7,14 @@ def get_current_user():
     token = request.cookies.get('device_token')
     if not token:
         return None
-    token_hash = bcrypt.generate_password_hash(token).decode('utf-8')
-    device_token = DeviceToken.query.filter_by(token_hash=token_hash).first()
-    if not device_token or device_token.expires_at < datetime.utcnow():
-        return None
-    user = User.query.get(device_token.user_id)
-    return user
+    # Find any non-expired device tokens for which the hashed value matches
+    now = datetime.utcnow()
+    candidates = DeviceToken.query.filter(DeviceToken.expires_at >= now).all()
+    for dt in candidates:
+        try:
+            if bcrypt.check_password_hash(dt.token_hash, token):
+                return User.query.get(dt.user_id)
+        except Exception:
+            # If hashing/check fails, continue to next
+            continue
+    return None

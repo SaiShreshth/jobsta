@@ -1,4 +1,5 @@
 from flask import Blueprint, request, redirect, url_for, flash, make_response, render_template
+from flask import current_app
 from app.extensions import db, mail, bcrypt
 from app.models import User, Token, DeviceToken
 from flask_mail import Message
@@ -34,10 +35,28 @@ def register():
         token = Token(email=email, token=token_str, expires_at=expires, used=False)
         db.session.add(token)
         db.session.commit()
-        # Send email
+        # Send verification email via SMTP
         login_url = url_for('auth.verify', token=token_str, _external=True)
-        print(f"Registration link for {email}: {login_url}")
-        flash('Check the console for the registration link')
+        subject = 'Verify your MSRIT Job Portal account'
+        body = f'Click here to verify your account: {login_url}'
+        sender_addr = current_app.config.get('MAIL_DEFAULT_SENDER')
+        sender_name = current_app.config.get('MAIL_SENDER_NAME', 'jobsta')
+        sender = f"{sender_name} <{sender_addr}>"
+        msg = Message(subject, sender=sender, recipients=[email])
+        msg.body = body
+        try:
+            if current_app.config.get('MAIL_SUPPRESS_SEND'):
+                # In dev mode, optionally suppress and print
+                print(f"[mail suppressed] Registration link for {email}: {login_url}")
+            else:
+                mail.send(msg)
+                print(f"[mail sent] Registration email queued to {email}")
+            flash('Verification email sent (check your inbox)')
+        except Exception as e:
+            print('Email send error:', e)
+            # Fallback to showing link in console for debugging
+            print(f"Registration link for {email}: {login_url}")
+            flash('Unable to send email; check server console for the verification link')
         return redirect(url_for('auth.register'))
     return render_template('auth/register.html', form=form)
 
@@ -61,7 +80,7 @@ def login():
                 db.session.add(device)
                 db.session.commit()
                 resp = make_response(redirect(url_for('index')))
-                resp.set_cookie('device_token', device_token, httponly=True, secure=True, samesite='Lax', max_age=7*24*3600)
+                resp.set_cookie('device_token', device_token, httponly=True, secure=current_app.config.get('COOKIE_SECURE', False), samesite='Lax', max_age=7*24*3600)
                 return resp
             else:
                 flash('Invalid password')
@@ -100,13 +119,14 @@ def verify(token):
     db.session.add(device)
     db.session.commit()
     resp = make_response(redirect(url_for('index')))
-    resp.set_cookie('device_token', device_token, httponly=True, secure=True, samesite='Lax', max_age=7*24*3600)
+    resp.set_cookie('device_token', device_token, httponly=True, secure=current_app.config.get('COOKIE_SECURE', False), samesite='Lax', max_age=7*24*3600)
     return resp
 
 @bp.route('/logout')
 def logout():
     resp = make_response(redirect(url_for('auth.login')))
-    resp.set_cookie('device_token', '', expires=0)
+    # Clear cookie (match secure setting when clearing)
+    resp.set_cookie('device_token', '', expires=0, secure=current_app.config.get('COOKIE_SECURE', False), httponly=True, samesite='Lax')
     return resp
 
 @bp.route('/set_password', methods=['GET', 'POST'])
