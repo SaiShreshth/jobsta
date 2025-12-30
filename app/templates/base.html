@@ -19,9 +19,9 @@
                 </div>
                 <!-- Desktop Navigation -->
                 <div class="hidden md:flex items-center space-x-4">
-                    <a href="{{ url_for('index') }}" class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                    <a href="{{ url_for('users.dashboard') }}" class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">Home</a>
                     {% if current_user %}
-                    <a href="{{ url_for('users.dashboard') }}" class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">Jobs</a>
+                    <a href="{{ url_for('users.jobs') }}" class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">Jobs</a>
                     <a href="{{ url_for('users.applications') }}" class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">My Applications</a>
                     <a href="{{ url_for('users.notifications') }}" class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">Notifications</a>
                     <a href="{{ url_for('users.settings') }}" class="hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">Settings</a>
@@ -45,9 +45,9 @@
         <!-- Mobile Navigation Menu -->
         <div x-show="open" class="md:hidden" x-transition>
             <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-blue-700">
-                <a href="{{ url_for('index') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800">Home</a>
+                <a href="{{ url_for('users.dashboard') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800">Home</a>
                 {% if current_user %}
-                <a href="{{ url_for('users.dashboard') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800">Jobs</a>
+                <a href="{{ url_for('users.jobs') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800">Jobs</a>
                 <a href="{{ url_for('users.applications') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800">My Applications</a>
                 <a href="{{ url_for('users.notifications') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800">Notifications</a>
                 <a href="{{ url_for('users.settings') }}" @click="open = false" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-800">Settings</a>

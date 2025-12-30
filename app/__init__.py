@@ -60,9 +60,9 @@ def create_app(config_class=Config):
         from flask import redirect, url_for
         from .utils.auth import get_current_user
         if get_current_user():
-            return redirect(url_for('users.dashboard', _external=True))
+            return redirect(url_for('users.dashboard'))
         else:
-            return redirect(url_for('auth.login', _external=True))
+            return redirect(url_for('auth.login'))
 
     @app.route('/admin')
     def admin():

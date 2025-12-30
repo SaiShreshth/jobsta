@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash
 from app.extensions import db
-from app.models import Job, User, Notification
+from app.models import Job, User, Notification, Application
 from app.forms import JobForm
 from app.utils.decorators import login_required, admin_required
 

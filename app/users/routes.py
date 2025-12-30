@@ -13,6 +13,12 @@ def jobs():
     jobs = Job.query.all()
     return render_template('users/jobs.html', jobs=jobs)
 
+@bp.route('/dashboard')
+@login_required
+def dashboard():
+    jobs = Job.query.limit(6).all()
+    return render_template('users/dashboard.html', jobs=jobs)
+
 @bp.route('/settings')
 @login_required
 def settings():
@@ -23,11 +29,16 @@ def settings():
     from datetime import datetime
     current_month = datetime.utcnow().month
     current_year = datetime.utcnow().year
-    monthly_applications = Application.query.filter(
-        Application.user_id == user.id,
-        db.extract('month', Application.created_at) == current_month,
-        db.extract('year', Application.created_at) == current_year
-    ).count()
+    # Use applied_at (existing timestamp) for monthly calculations when available
+    try:
+        monthly_applications = Application.query.filter(
+            Application.user_id == user.id,
+            db.extract('month', Application.applied_at) == current_month,
+            db.extract('year', Application.applied_at) == current_year
+        ).count()
+    except Exception:
+        # Fallback if extract not supported by DB or column missing
+        monthly_applications = 0
     return render_template('users/settings.html', user=user, total_applications=total_applications, monthly_applications=monthly_applications)
 
 @bp.route('/job/<int:job_id>')
@@ -47,7 +58,7 @@ def apply(job_id):
     existing = Application.query.filter_by(user_id=user.id, job_id=job_id).first()
     if existing:
         flash('Already applied')
-        return redirect(url_for('users.job_detail', job_id=job_id, _external=True))
+        return redirect(url_for('users.job_detail', job_id=job_id))
     application = Application(user_id=user.id, job_id=job_id)
     db.session.add(application)
     db.session.commit()
@@ -56,7 +67,7 @@ def apply(job_id):
     msg.body = f'You have successfully applied for {job.title} at {job.company}.'
     mail.send(msg)
     flash('Applied successfully')
-    return redirect(url_for('users.dashboard', _external=True))
+    return redirect(url_for('users.dashboard'))
 
 @bp.route('/review/<int:job_id>', methods=['POST'])
 @login_required
@@ -66,7 +77,7 @@ def review(job_id):
     application = Application.query.filter_by(user_id=user.id, job_id=job_id).first()
     if not application:
         flash('You must apply first')
-        return redirect(url_for('users.job_detail', job_id=job_id, _external=True))
+        return redirect(url_for('users.job_detail', job_id=job_id))
     rating = int(request.form['rating'])
     comment = request.form.get('comment')
     review_obj = Review(job_id=job_id, user_id=user.id, rating=rating, comment=comment)
