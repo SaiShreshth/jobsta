@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: msrit-job-portal
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: DATABASE_URL
+        fromSecret: database_url
+      - key: SECRET_KEY
+        fromSecret: secret_key
+      - key: EMAIL_SERVER
+        fromSecret: email_server
+      - key: EMAIL_PORT
+        fromSecret: email_port
+      - key: EMAIL_USERNAME
+        fromSecret: email_username
+      - key: EMAIL_PASSWORD
+        fromSecret: email_password
