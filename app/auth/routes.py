@@ -7,6 +7,11 @@ import secrets
 from datetime import datetime, timedelta
 from app.forms import RegistrationForm, LoginForm, SetPasswordForm, ChangePasswordForm
 
+def generate_temp_password(length=12):
+    import string
+    alphabet = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
+
 bp = Blueprint('auth', __name__)
 
 @bp.route('/register', methods=['GET', 'POST'])
@@ -108,8 +113,31 @@ def verify(token):
     if not user:
         flash('User not found')
         return redirect(url_for('auth.login'))
-    # Mark verified
-    user.is_verified = True
+    # Mark verified if not already
+    if not user.is_verified:
+        user.is_verified = True
+        # Generate temp password
+        temp_pw = generate_temp_password()
+        user.password_hash = bcrypt.generate_password_hash(temp_pw).decode('utf-8')
+        # Send temp password email
+        sender_addr = current_app.config.get('MAIL_DEFAULT_SENDER')
+        sender_name = current_app.config.get('MAIL_SENDER_NAME', 'jobsta')
+        sender = f"{sender_name} <{sender_addr}>"
+        msg = Message(
+            subject="Welcome to Jobsta - Your Temporary Password",
+            sender=sender,
+            recipients=[user.email]
+        )
+        msg.body = f"Your account has been verified. Your temporary password is: {temp_pw}\nPlease log in and change your password as soon as possible."
+        try:
+            if current_app.config.get('MAIL_SUPPRESS_SEND'):
+                print(f"[mail suppressed] Temp password for {user.email}: {temp_pw}")
+            else:
+                mail.send(msg)
+                print(f"[mail sent] Temp password email queued to {user.email}")
+        except Exception as e:
+            print('Email send error:', e)
+            print(f"Temp password for {user.email}: {temp_pw}")
     token_obj.used = True
     # Issue device token
     device_token = secrets.token_urlsafe(64)
