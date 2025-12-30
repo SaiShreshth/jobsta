@@ -1,7 +1,7 @@
 # PROJECT EXECUTION CHECKLIST
 
 - [x] TASK-01 Project Initialization
-- [ ] TASK-02 Configuration & Env
+- [x] TASK-02 Configuration & Env
 - [ ] TASK-03 Database Connection
 - [ ] TASK-04 Schema Design
 - [ ] TASK-05 Magic Link Auth

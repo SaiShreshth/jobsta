@@ -12,6 +12,8 @@ def create_app(config_class=Config):
     mail.init_app(app)
     bcrypt.init_app(app)
 
+    from . import models
+
     # Register blueprints
     from .auth import bp as auth_bp
     app.register_blueprint(auth_bp)
