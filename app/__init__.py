@@ -9,7 +9,12 @@ basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 load_dotenv(os.path.join(basedir, '.env'))
 
 def create_app(config_class=Config):
-    app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), '..', 'static'))
+    app = Flask(
+        __name__,
+        static_folder=os.path.abspath('static'),
+        static_url_path='/static'
+    )
+    # app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), '..', 'static'))
     app.config.from_object(config_class)
     # Normalize DB URI for psycopg if needed and log active DB
     uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
