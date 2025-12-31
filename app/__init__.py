@@ -3,19 +3,29 @@ from flask import Flask
 from .config import Config
 from .extensions import db, migrate, mail, bcrypt
 from dotenv import load_dotenv
+from whitenoise import WhiteNoise
 
 # Load environment variables from project `.env` if present
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 load_dotenv(os.path.join(basedir, '.env'))
 
 def create_app(config_class=Config):
+    # Calculate static folder relative to project root
+    basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    static_folder = os.path.join(basedir, 'static')
+    
     app = Flask(
         __name__,
-        static_folder=os.path.abspath('static'),
+        static_folder=static_folder,
         static_url_path='/static'
     )
+    # ... rest of your code
     # app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), '..', 'static'))
     app.config.from_object(config_class)
+    
+    # Add WhiteNoise middleware for serving static files in production
+    app.wsgi_app = WhiteNoise(app.wsgi_app, root=static_folder, prefix='static/')
+    
     # Normalize DB URI for psycopg if needed and log active DB
     uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
     if uri.startswith('postgresql://') and '+psycopg' not in uri:
