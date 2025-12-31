@@ -10,9 +10,27 @@ basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 load_dotenv(os.path.join(basedir, '.env'))
 
 def create_app(config_class=Config):
-    # Calculate static folder relative to project root
-    basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    static_folder = os.path.join(basedir, 'static')
+    # Calculate static folder - check multiple possible locations
+    app_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # Try different possible locations for static folder
+    possible_static_paths = [
+        os.path.join(app_dir, '..', 'static'),  # Root level (local dev)
+        os.path.join(app_dir, 'static'),         # Inside app folder
+        'static',                                 # Relative to working directory
+    ]
+    
+    static_folder = None
+    for path in possible_static_paths:
+        abs_path = os.path.abspath(path)
+        if os.path.exists(abs_path):
+            static_folder = abs_path
+            print(f"[startup] Found static folder at: {static_folder}")
+            break
+    
+    if not static_folder:
+        print(f"[startup] WARNING: Static folder not found! Tried: {possible_static_paths}")
+        static_folder = os.path.join(app_dir, '..', 'static')  # Fallback
     
     app = Flask(
         __name__,
