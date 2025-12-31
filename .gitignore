@@ -13,3 +13,4 @@ migrations/versions/
 node_modules/
 static/css/
 static/js/
+.vercel
