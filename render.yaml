@@ -5,7 +5,7 @@ services:
     region: oregon
     plan: free
     buildCommand: pip install -r requirements.txt && flask db upgrade
-    startCommand: gunicorn --bind 0.0.0.0:$PORT wsgi:app --workers 2 --timeout 120 --access-logfile - --error-logfile -
+    startCommand: waitress-serve --port=$PORT wsgi:app
     healthCheckPath: /
     envVars:
       - key: FLASK_ENV
