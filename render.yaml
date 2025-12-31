@@ -7,6 +7,11 @@ services:
     buildCommand: pip install -r requirements.txt && flask db upgrade
     startCommand: gunicorn --bind 0.0.0.0:$PORT wsgi:app --workers 2 --timeout 120 --access-logfile - --error-logfile -
     healthCheckPath: /
+    staticPrecompiledAssets: true
+    routes:
+      - type: static
+        source: /static
+        destination: /static
     envVars:
       - key: FLASK_ENV
         value: production
