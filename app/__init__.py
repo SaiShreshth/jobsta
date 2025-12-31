@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, send_from_directory
 from .config import Config
 from .extensions import db, migrate, mail, bcrypt
 from dotenv import load_dotenv
@@ -25,6 +25,12 @@ def create_app(config_class=Config):
     
     # Add WhiteNoise middleware for serving static files in production
     app.wsgi_app = WhiteNoise(app.wsgi_app, root=static_folder, prefix='static/')
+    
+    # Explicit route for CSS files as fallback
+    @app.route('/static/css/<path:filename>')
+    def serve_css(filename):
+        css_dir = os.path.join(static_folder, 'css')
+        return send_from_directory(css_dir, filename, mimetype='text/css')
     
     # Normalize DB URI for psycopg if needed and log active DB
     uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
