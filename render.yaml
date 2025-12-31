@@ -1,21 +1,37 @@
 services:
   - type: web
-    name: msrit-job-portal
+    name: jobsta
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn wsgi:app
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt && flask db upgrade
+    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    healthCheckPath: /
     envVars:
       - key: FLASK_ENV
         value: production
       - key: DATABASE_URL
-        fromSecret: database_url
+        fromDatabase:
+          name: jobsta-db
+          property: connectionString
       - key: SECRET_KEY
-        fromSecret: secret_key
+        generateValue: true
       - key: EMAIL_SERVER
-        fromSecret: email_server
+        value: smtp.gmail.com
       - key: EMAIL_PORT
-        fromSecret: email_port
+        value: 587
       - key: EMAIL_USERNAME
-        fromSecret: email_username
+        sync: false
       - key: EMAIL_PASSWORD
-        fromSecret: email_password
+        sync: false
+      - key: COOKIE_SECURE
+        value: true
+      - key: PREFERRED_URL_SCHEME
+        value: https
+
+databases:
+  - name: jobsta-db
+    region: oregon
+    plan: free
+    databaseName: jobsta
+    user: jobsta

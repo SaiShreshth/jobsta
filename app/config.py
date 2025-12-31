@@ -18,6 +18,6 @@ class Config:
     WTF_CSRF_ENABLED = True
     # Use secure cookies (only set to True in production with HTTPS)
     COOKIE_SECURE = os.environ.get('COOKIE_SECURE', 'False').lower() in ('1', 'true', 'yes')
-    # Server name for URL generation
-    SERVER_NAME = os.environ.get('SERVER_NAME') or 'knox-swainish-wonderingly.ngrok-free.dev'
+    # Server name - removed for Render compatibility (auto-handled)
+    # PREFERRED_URL_SCHEME used by Flask for URL generation
     PREFERRED_URL_SCHEME = os.environ.get('PREFERRED_URL_SCHEME') or 'https'
