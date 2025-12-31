@@ -84,7 +84,7 @@ def login():
                 # Issue device token
                 device_token = secrets.token_urlsafe(64)
                 expires = datetime.utcnow() + timedelta(days=7)
-                token_hash = bcrypt.generate_password_hash(device_token).decode('utf-8')
+                token_hash = bcrypt.generate_password_hash(device_token[:72]).decode('utf-8')
                 device = DeviceToken(user_id=user.id, token_hash=token_hash, expires_at=expires)
                 db.session.add(device)
                 db.session.commit()
