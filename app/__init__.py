@@ -103,11 +103,12 @@ def create_app(config_class=Config):
         from flask import request, g
         g.request_id = request.headers.get('X-Request-ID') or str(uuid.uuid4())
         g.start_time = time.perf_counter()
-        app.logger.info(
-            "request.start remote=%s agent=%s",
-            request.headers.get('X-Forwarded-For', request.remote_addr),
-            request.user_agent.string,
-        )
+        # Only log non-static, relevant requests
+        if not request.path.startswith('/static/'):
+            app.logger.info(
+                "req=%s %s %s start",
+                g.request_id, request.method, request.path
+            )
 
     @app.after_request
     def _log_request_end(response):
@@ -131,9 +132,14 @@ def create_app(config_class=Config):
         except Exception:
             user_id = None
 
-        app.logger.info(
-            "request.end status=%s duration_ms=%s user_id=%s", response.status_code, f"{duration_ms:.1f}" if duration_ms else 'n/a', user_id
-        )
+        # Only log non-static requests and slow/error requests
+        if not request.path.startswith('/static/'):
+            if duration_ms and (duration_ms > 100 or response.status_code >= 400):
+                app.logger.info(
+                    "req=%s %s %s end status=%s duration_ms=%.1f user_id=%s",
+                    getattr(g, 'request_id', '-'), request.method, request.path,
+                    response.status_code, duration_ms, user_id
+                )
         return response
     
     # Normalize DB URI for psycopg if needed and log active DB
