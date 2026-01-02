@@ -157,7 +157,7 @@ def create_app(config_class=Config):
             'max_overflow': 10,             # Allow 10 additional connections beyond pool_size
             'pool_recycle': 3600,           # Recycle connections after 1 hour
             'connect_args': {
-                'timeout': 10,              # 10-second timeout for connection attempts
+                'connect_timeout': 10,      # 10-second timeout for connection attempts (psycopg3 parameter)
                 'keepalives': 1,            # Enable TCP keepalives to keep connections alive
                 'keepalives_idle': 30,      # Start keepalives after 30 seconds of idle
             }
