@@ -1,11 +1,11 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
 from app.models import Job, Application, Review, Notification
 from app.models import Recommendation
 from app.utils.decorators import login_required
 from app.utils.auth import get_current_user
 from app.forms import RecommendationForm
-from app.extensions import db
-from app.utils.email import send_application_confirmation_email
+from app.extensions import db, mail
+from flask_mail import Message
 from datetime import datetime, timedelta
 from flask import abort
 
@@ -120,6 +120,7 @@ def recommendations():
 def apply(job_id):
     job = Job.query.get_or_404(job_id)
     user = get_current_user()
+    current_app.logger.info("users.apply start user_id=%s job_id=%s", getattr(user, 'id', None), job_id)
     
     # Check if job is active (if status column exists)
     if hasattr(job, 'status') and job.status and job.status != 'active':
@@ -134,6 +135,7 @@ def apply(job_id):
     # Check if already applied
     existing = Application.query.filter_by(user_id=user.id, job_id=job_id).first()
     if existing:
+        current_app.logger.info("users.apply duplicate_application user_id=%s job_id=%s", user.id, job_id)
         flash('You have already applied for this job')
         return redirect(job.apply_url)
     
@@ -146,10 +148,20 @@ def apply(job_id):
     db.session.add(notification)
     
     db.session.commit()
+    current_app.logger.info("users.apply recorded user_id=%s job_id=%s", user.id, job_id)
     
     # Send confirmation email
     apply_url = getattr(job, 'apply_url', 'https://example.com/apply')
-    send_application_confirmation_email(user.email, job.title, job.company, apply_url)
+    try:
+        msg = Message('Application Received', sender=current_app.config.get('MAIL_DEFAULT_SENDER'), recipients=[user.email])
+        msg.body = f'You have successfully applied for {job.title} at {job.company}. Apply at: {apply_url}'
+        if current_app.config.get('MAIL_SUPPRESS_SEND'):
+            current_app.logger.info("mail.suppressed application to=%s", user.email)
+        else:
+            mail.send(msg)
+            current_app.logger.info("mail.sent application to=%s", user.email)
+    except Exception:
+        current_app.logger.exception("mail.error application to=%s", user.email)
     
     # Redirect to external apply URL (or job detail if not available)
     apply_url = getattr(job, 'apply_url', None)

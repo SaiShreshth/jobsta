@@ -17,15 +17,17 @@ def send_email(to_email: str, subject: str, body: str, html: str = None) -> bool
         True if email was sent successfully or suppressed, False on error
     """
     # Check if email sending is suppressed (for development)
+    logger = current_app.logger
+
     if current_app.config.get('MAIL_SUPPRESS_SEND'):
-        print(f"[mail suppressed] To: {to_email}, Subject: {subject}")
-        print(f"Body: {body}")
+        logger.info("mail.suppressed to=%s subject=%s", to_email, subject)
+        logger.debug("mail.suppressed body=%s", body)
         return True
     
     # Get Resend API key
     api_key = current_app.config.get('RESEND_API_KEY')
     if not api_key:
-        print('[email error] RESEND_API_KEY not configured')
+        logger.error('mail.error api_key_missing')
         return False
     
     try:
@@ -50,11 +52,11 @@ def send_email(to_email: str, subject: str, body: str, html: str = None) -> bool
         # Send the email
         response = resend.Emails.send(email_data)
         
-        print(f"[mail sent] Email to {to_email}, Subject: {subject}, Response: {response}")
+        logger.info("mail.sent to=%s subject=%s response_id=%s", to_email, subject, response.get('id'))
         return True
         
     except Exception as e:
-        print(f'[email error] Failed to send email to {to_email}: {e}')
+        logger.exception('mail.error send_failed to=%s subject=%s error=%s', to_email, subject, e)
         return False
 
 

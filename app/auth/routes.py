@@ -1,8 +1,8 @@
 from flask import Blueprint, request, redirect, url_for, flash, make_response, render_template
 from flask import current_app
-from app.extensions import db, bcrypt
+from app.extensions import db, bcrypt, mail
 from app.models import User, Token, DeviceToken
-from app.utils.email import send_verification_email, send_temp_password_email
+from flask_mail import Message
 import secrets
 from datetime import datetime, timedelta
 from app.forms import RegistrationForm, LoginForm, SetPasswordForm, ChangePasswordForm
@@ -21,12 +21,15 @@ def register():
     if form.validate_on_submit():
         name = form.name.data
         email = form.email.data
+        current_app.logger.info("auth.register attempt email=%s", email)
         if not email.endswith('@msrit.edu'):
+            current_app.logger.warning("auth.register blocked_non_msrit email=%s", email)
             flash('Only @msrit.edu emails are allowed')
             return redirect(url_for('auth.register'))
         # Check if user exists
         user = User.query.filter_by(email=email).first()
         if user:
+            current_app.logger.info("auth.register exists email=%s", email)
             flash('User already exists. Please login.')
             return redirect(url_for('auth.login'))
         # Create user
@@ -35,16 +38,33 @@ def register():
             user.role = 'admin'
         db.session.add(user)
         db.session.commit()
+        current_app.logger.info("auth.register created_user id=%s email=%s", user.id, email)
         # Generate magic token
         token_str = secrets.token_urlsafe(32)
         expires = datetime.utcnow() + timedelta(hours=1)  # short-lived
         token = Token(email=email, token=token_str, expires_at=expires, used=False)
         db.session.add(token)
         db.session.commit()
-        # Send verification email via Resend
+        current_app.logger.info("auth.register token_created email=%s expires=%s", email, expires)
+        # Send verification email via SMTP
         login_url = url_for('auth.verify', token=token_str, _external=True)
-        send_verification_email(email, login_url)
-        flash('Verification email sent (check your inbox)')
+        subject = 'Verify your Jobsta account'
+        body = f'Click here to verify your account: {login_url}'
+        sender_addr = current_app.config.get('MAIL_DEFAULT_SENDER')
+        sender_name = current_app.config.get('MAIL_SENDER_NAME', 'jobsta')
+        sender = f"{sender_name} <{sender_addr}>"
+        msg = Message(subject, sender=sender, recipients=[email])
+        msg.body = body
+        try:
+            if current_app.config.get('MAIL_SUPPRESS_SEND'):
+                current_app.logger.info("mail.suppressed verification to=%s", email)
+            else:
+                mail.send(msg)
+                current_app.logger.info("mail.sent verification to=%s", email)
+            flash('Verification email sent (check your inbox)')
+        except Exception as e:
+            current_app.logger.exception("mail.error verification to=%s", email)
+            flash('Unable to send email; please try again later')
         return redirect(url_for('auth.register'))
     return render_template('auth/register.html', form=form)
 
@@ -57,8 +77,10 @@ def login():
     if form.validate_on_submit():
         email = form.email.data
         password = form.password.data
+        current_app.logger.info("auth.login attempt email=%s", email)
         user = User.query.filter_by(email=email).first()
         if not user or not user.is_verified:
+            current_app.logger.warning("auth.login invalid_or_unverified email=%s", email)
             flash('Invalid email or user not verified')
             return redirect(url_for('auth.login'))
         if user.password_hash and password:
@@ -85,6 +107,7 @@ def login():
             db.session.commit()
             login_url = url_for('auth.verify', token=token_str, _external=True)
             print(f"Magic link for {email}: {login_url}")
+                current_app.logger.info("auth.login magic_link_issued email=%s", email)
             flash('Check the console for the magic link')
             return redirect(url_for('auth.login'))
     return render_template('auth/login.html', form=form)
@@ -93,10 +116,12 @@ def login():
 def verify(token):
     token_obj = Token.query.filter_by(token=token, used=False).first()
     if not token_obj or token_obj.expires_at < datetime.utcnow():
+        current_app.logger.warning("auth.verify invalid_or_expired token=%s", token)
         flash('Invalid or expired token')
         return redirect(url_for('auth.login'))
     user = User.query.filter_by(email=token_obj.email).first()
     if not user:
+        current_app.logger.error("auth.verify user_not_found token=%s email=%s", token, token_obj.email)
         flash('User not found')
         return redirect(url_for('auth.login'))
     # Mark verified if not already
@@ -106,7 +131,23 @@ def verify(token):
         temp_pw = generate_temp_password()
         user.password_hash = bcrypt.generate_password_hash(temp_pw).decode('utf-8')
         # Send temp password email
-        send_temp_password_email(user.email, temp_pw)
+        sender_addr = current_app.config.get('MAIL_DEFAULT_SENDER')
+        sender_name = current_app.config.get('MAIL_SENDER_NAME', 'jobsta')
+        sender = f"{sender_name} <{sender_addr}>"
+        msg = Message(
+            subject="Welcome to Jobsta - Your Temporary Password",
+            sender=sender,
+            recipients=[user.email]
+        )
+        msg.body = f"Your account has been verified. Your temporary password is: {temp_pw}\nPlease log in and change your password as soon as possible."
+        try:
+            if current_app.config.get('MAIL_SUPPRESS_SEND'):
+                current_app.logger.info("mail.suppressed temp_pw to=%s", user.email)
+            else:
+                mail.send(msg)
+                current_app.logger.info("mail.sent temp_pw to=%s", user.email)
+        except Exception as e:
+            current_app.logger.exception("mail.error temp_pw to=%s", user.email)
     token_obj.used = True
     # Issue device token
     device_token = secrets.token_urlsafe(64)
