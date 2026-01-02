@@ -4,6 +4,10 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-key-change-this'
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///dev.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    
+    # Only apply PostgreSQL-specific engine options if using PostgreSQL (checked at init time)
+    # Default to empty dict; will be set in create_app() if needed
+    SQLALCHEMY_ENGINE_OPTIONS = {}
     # Logging
     LOG_LEVEL = (os.environ.get('LOG_LEVEL') or 'INFO').upper()
     # SMTP mail configuration

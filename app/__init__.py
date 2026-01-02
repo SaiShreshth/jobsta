@@ -149,6 +149,20 @@ def create_app(config_class=Config):
         app.config['SQLALCHEMY_DATABASE_URI'] = uri
     app.logger.info("startup.database uri=%s", app.config.get('SQLALCHEMY_DATABASE_URI'))
 
+    # Set PostgreSQL-specific engine options for Neon/psycopg3 SSL and connection pool
+    if uri.startswith('postgresql'):
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'pool_pre_ping': True,          # Verify connections before using them
+            'pool_size': 5,                 # Number of connections to keep in pool
+            'max_overflow': 10,             # Allow 10 additional connections beyond pool_size
+            'pool_recycle': 3600,           # Recycle connections after 1 hour
+            'connect_args': {
+                'timeout': 10,              # 10-second timeout for connection attempts
+                'keepalives': 1,            # Enable TCP keepalives to keep connections alive
+                'keepalives_idle': 30,      # Start keepalives after 30 seconds of idle
+            }
+        }
+
     db.init_app(app)
     migrate.init_app(app, db)
     mail.init_app(app)
