@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import uuid
+from datetime import datetime
 from flask import Flask, send_from_directory
 from .config import Config
 from .extensions import db, migrate, bcrypt, mail
@@ -167,6 +168,25 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
     mail.init_app(app)
     bcrypt.init_app(app)
+    
+    # Store startup time for diagnostics
+    app.config['STARTUP_TIME'] = datetime.utcnow().isoformat()
+    
+    # Test mail service after initialization
+    app.logger.info("="*60)
+    app.logger.info("INITIALIZING MAIL SERVICE")
+    app.logger.info("="*60)
+    try:
+        from app.utils.mail_logger import test_mail_connection_detailed
+        with app.app_context():
+            success, error = test_mail_connection_detailed()
+            if success:
+                app.logger.info("Mail service initialized and tested successfully ✅")
+            else:
+                app.logger.error(f"Mail service test FAILED: {error}")
+    except Exception as e:
+        app.logger.error(f"Mail service test encountered error: {str(e)}")
+    app.logger.info("="*60)
 
     from . import models
 

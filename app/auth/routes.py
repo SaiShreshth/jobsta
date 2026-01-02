@@ -1,8 +1,7 @@
 from flask import Blueprint, request, redirect, url_for, flash, make_response, render_template
 from flask import current_app
-from app.extensions import db, bcrypt, mail
+from app.extensions import db, bcrypt
 from app.models import User, Token, DeviceToken
-from flask_mail import Message
 import secrets
 from datetime import datetime, timedelta
 from app.forms import RegistrationForm, LoginForm, SetPasswordForm, ChangePasswordForm
@@ -46,32 +45,25 @@ def register():
         db.session.add(token)
         db.session.commit()
         current_app.logger.info("auth.register token_created email=%s", email)
-        # Send verification email via SMTP
+        # Send verification email via SMTP with detailed logging
         login_url = url_for('auth.verify', token=token_str, _external=True)
-        sender_addr = current_app.config.get('MAIL_DEFAULT_SENDER')
-        current_app.logger.info("auth.register email_send_start to=%s from=%s", email, sender_addr)
+        current_app.logger.info("auth.register email_send_start to=%s", email)
         
-        try:
-            if current_app.config.get('MAIL_SUPPRESS_SEND'):
-                current_app.logger.info("auth.register email_suppressed to=%s", email)
-                flash('Verification email sent (check your inbox)')
-            else:
-                sender_name = current_app.config.get('MAIL_SENDER_NAME', 'Jobsta')
-                sender = f"{sender_name} <{sender_addr}>"
-                msg = Message('Verify your Jobsta account', sender=sender, recipients=[email])
-                msg.body = f'Click here to verify your account: {login_url}'
-                
-                import socket
-                socket.setdefaulttimeout(10)  # 10 second timeout for SMTP
-                mail.send(msg)
-                current_app.logger.info("auth.register email_sent to=%s", email)
-                flash('Verification email sent (check your inbox)')
-        except socket.timeout:
-            current_app.logger.error("auth.register email_timeout to=%s", email)
-            flash('Verification link: check console (email service slow)')
-        except Exception as e:
-            current_app.logger.error("auth.register email_failed to=%s error=%s", email, str(e)[:100])
-            flash('Account created. Email service unavailable - contact admin')
+        from app.utils.mail_logger import send_email_with_detailed_logging
+        
+        email_body = f"Click here to verify your account: {login_url}"
+        success, error = send_email_with_detailed_logging(
+            subject="Verify your Jobsta account",
+            recipient=email,
+            body=email_body
+        )
+        
+        if success:
+            current_app.logger.info("auth.register email_sent to=%s", email)
+            flash('Registration successful! Check your email to verify your account.', 'success')
+        else:
+            current_app.logger.error("auth.register email_failed to=%s error=%s", email, error)
+            flash(f'Account created. Email service error: {error}', 'warning')
         return redirect(url_for('auth.register'))
     return render_template('auth/register.html', form=form)
 
@@ -139,27 +131,22 @@ def verify(token):
         user.password_hash = bcrypt.generate_password_hash(temp_pw).decode('utf-8')
         current_app.logger.info("auth.verify password_set user=%s", user.id)
         
-        # Send temp password email with timeout
-        try:
-            if current_app.config.get('MAIL_SUPPRESS_SEND'):
-                current_app.logger.info("auth.verify email_suppressed to=%s", user.email)
-            else:
-                sender_addr = current_app.config.get('MAIL_DEFAULT_SENDER')
-                sender_name = current_app.config.get('MAIL_SENDER_NAME', 'Jobsta')
-                sender = f"{sender_name} <{sender_addr}>"
-                msg = Message(
-                    subject="Welcome to Jobsta - Your Temporary Password",
-                    sender=sender,
-                    recipients=[user.email]
-                )
-                msg.body = f"Your account has been verified. Your temporary password is: {temp_pw}\nPlease log in and change your password as soon as possible."
-                
-                import socket
-                socket.setdefaulttimeout(10)
-                mail.send(msg)
-                current_app.logger.info("auth.verify email_sent to=%s", user.email)
-        except Exception as e:
-            current_app.logger.error("auth.verify email_failed to=%s error=%s", user.email, str(e)[:100])
+        # Send temp password email with detailed logging
+        current_app.logger.info("auth.verify email_send_start to=%s", user.email)
+        
+        from app.utils.mail_logger import send_email_with_detailed_logging
+        
+        email_body = f"Your account has been verified. Your temporary password is: {temp_pw}\nPlease log in and change your password as soon as possible."
+        success, error = send_email_with_detailed_logging(
+            subject="Welcome to Jobsta - Your Temporary Password",
+            recipient=user.email,
+            body=email_body
+        )
+        
+        if success:
+            current_app.logger.info("auth.verify email_sent to=%s", user.email)
+        else:
+            current_app.logger.error("auth.verify email_failed to=%s error=%s", user.email, error)
     token_obj.used = True
     # Issue device token
     device_token = secrets.token_urlsafe(64)
