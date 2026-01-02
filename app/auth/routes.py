@@ -1,8 +1,8 @@
 from flask import Blueprint, request, redirect, url_for, flash, make_response, render_template
 from flask import current_app
-from app.extensions import db, mail, bcrypt
+from app.extensions import db, bcrypt
 from app.models import User, Token, DeviceToken
-from flask_mail import Message
+from app.utils.email import send_verification_email, send_temp_password_email
 import secrets
 from datetime import datetime, timedelta
 from app.forms import RegistrationForm, LoginForm, SetPasswordForm, ChangePasswordForm
@@ -41,28 +41,10 @@ def register():
         token = Token(email=email, token=token_str, expires_at=expires, used=False)
         db.session.add(token)
         db.session.commit()
-        # Send verification email via SMTP
+        # Send verification email via Resend
         login_url = url_for('auth.verify', token=token_str, _external=True)
-        subject = 'Verify your Jobsta account'
-        body = f'Click here to verify your account: {login_url}'
-        sender_addr = current_app.config.get('MAIL_DEFAULT_SENDER')
-        sender_name = current_app.config.get('MAIL_SENDER_NAME', 'jobsta')
-        sender = f"{sender_name} <{sender_addr}>"
-        msg = Message(subject, sender=sender, recipients=[email])
-        msg.body = body
-        try:
-            if current_app.config.get('MAIL_SUPPRESS_SEND'):
-                # In dev mode, optionally suppress and print
-                print(f"[mail suppressed] Registration link for {email}: {login_url}")
-            else:
-                mail.send(msg)
-                print(f"[mail sent] Registration email queued to {email}")
-            flash('Verification email sent (check your inbox)')
-        except Exception as e:
-            print('Email send error:', e)
-            # Fallback to showing link in console for debugging
-            print(f"Registration link for {email}: {login_url}")
-            flash('Unable to send email; check server console for the verification link')
+        send_verification_email(email, login_url)
+        flash('Verification email sent (check your inbox)')
         return redirect(url_for('auth.register'))
     return render_template('auth/register.html', form=form)
 
@@ -124,24 +106,7 @@ def verify(token):
         temp_pw = generate_temp_password()
         user.password_hash = bcrypt.generate_password_hash(temp_pw).decode('utf-8')
         # Send temp password email
-        sender_addr = current_app.config.get('MAIL_DEFAULT_SENDER')
-        sender_name = current_app.config.get('MAIL_SENDER_NAME', 'jobsta')
-        sender = f"{sender_name} <{sender_addr}>"
-        msg = Message(
-            subject="Welcome to Jobsta - Your Temporary Password",
-            sender=sender,
-            recipients=[user.email]
-        )
-        msg.body = f"Your account has been verified. Your temporary password is: {temp_pw}\nPlease log in and change your password as soon as possible."
-        try:
-            if current_app.config.get('MAIL_SUPPRESS_SEND'):
-                print(f"[mail suppressed] Temp password for {user.email}: {temp_pw}")
-            else:
-                mail.send(msg)
-                print(f"[mail sent] Temp password email queued to {user.email}")
-        except Exception as e:
-            print('Email send error:', e)
-            print(f"Temp password for {user.email}: {temp_pw}")
+        send_temp_password_email(user.email, temp_pw)
     token_obj.used = True
     # Issue device token
     device_token = secrets.token_urlsafe(64)

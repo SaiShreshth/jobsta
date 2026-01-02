@@ -4,8 +4,8 @@ from app.models import Recommendation
 from app.utils.decorators import login_required
 from app.utils.auth import get_current_user
 from app.forms import RecommendationForm
-from app.extensions import db, mail
-from flask_mail import Message
+from app.extensions import db
+from app.utils.email import send_application_confirmation_email
 from datetime import datetime, timedelta
 from flask import abort
 
@@ -148,13 +148,8 @@ def apply(job_id):
     db.session.commit()
     
     # Send confirmation email
-    try:
-        apply_url = getattr(job, 'apply_url', 'https://example.com/apply')
-        msg = Message('Application Received', sender='noreply@jobsta.com', recipients=[user.email])
-        msg.body = f'You have successfully applied for {job.title} at {job.company}. Apply at: {apply_url}'
-        mail.send(msg)
-    except Exception:
-        pass  # Don't fail if email fails
+    apply_url = getattr(job, 'apply_url', 'https://example.com/apply')
+    send_application_confirmation_email(user.email, job.title, job.company, apply_url)
     
     # Redirect to external apply URL (or job detail if not available)
     apply_url = getattr(job, 'apply_url', None)

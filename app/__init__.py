@@ -1,7 +1,7 @@
 import os
 from flask import Flask, send_from_directory
 from .config import Config
-from .extensions import db, migrate, mail, bcrypt
+from .extensions import db, migrate, bcrypt
 from dotenv import load_dotenv
 from whitenoise import WhiteNoise
 
@@ -59,7 +59,6 @@ def create_app(config_class=Config):
 
     db.init_app(app)
     migrate.init_app(app, db)
-    mail.init_app(app)
     bcrypt.init_app(app)
 
     from . import models
