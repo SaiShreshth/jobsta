@@ -142,10 +142,10 @@ def create_app(config_class=Config):
                 )
         return response
     
-    # Normalize DB URI for psycopg2 if needed and log active DB
+    # Normalize DB URI for psycopg if needed and log active DB
     uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
     if uri.startswith('postgresql://') and '+psycopg' not in uri:
-        uri = uri.replace('postgresql://', 'postgresql+psycopg2://', 1)
+        uri = uri.replace('postgresql://', 'postgresql+psycopg://', 1)
         app.config['SQLALCHEMY_DATABASE_URI'] = uri
     app.logger.info("startup.database uri=%s", app.config.get('SQLALCHEMY_DATABASE_URI'))
 
