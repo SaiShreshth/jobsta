@@ -1,60 +1,31 @@
-"""Email sending utilities using Resend API"""
+"""Email helpers using Flask-Mail."""
 from flask import current_app
-import resend
+from flask_mail import Message
+
+from app.extensions import mail
 
 
-def send_email(to_email: str, subject: str, body: str, html: str = None) -> bool:
-    """
-    Send an email using Resend API.
-    
-    Args:
-        to_email: Recipient email address
-        subject: Email subject
-        body: Plain text email body
-        html: Optional HTML email body
-        
-    Returns:
-        True if email was sent successfully or suppressed, False on error
-    """
-    # Check if email sending is suppressed (for development)
+def send_email(to_email: str, subject: str, body: str, html: str | None = None) -> bool:
+    """Send email with Flask-Mail, honoring MAIL_SUPPRESS_SEND."""
     logger = current_app.logger
+
+    sender_addr = current_app.config.get('MAIL_DEFAULT_SENDER', 'noreply@jobsta.com')
+    sender_name = current_app.config.get('MAIL_SENDER_NAME', 'jobsta')
+    sender = f"{sender_name} <{sender_addr}>" if sender_name else sender_addr
 
     if current_app.config.get('MAIL_SUPPRESS_SEND'):
         logger.info("mail.suppressed to=%s subject=%s", to_email, subject)
         logger.debug("mail.suppressed body=%s", body)
         return True
-    
-    # Get Resend API key
-    api_key = current_app.config.get('RESEND_API_KEY')
-    if not api_key:
-        logger.error('mail.error api_key_missing')
-        return False
-    
+
+    msg = Message(subject=subject, recipients=[to_email], sender=sender, body=body)
+    if html:
+        msg.html = html
+
     try:
-        # Set API key for resend
-        resend.api_key = api_key
-        
-        # Build email data
-        sender_addr = current_app.config.get('MAIL_DEFAULT_SENDER', 'noreply@jobsta.com')
-        sender_name = current_app.config.get('MAIL_SENDER_NAME', 'jobsta')
-        
-        email_data = {
-            'from': f"{sender_name} <{sender_addr}>",
-            'to': to_email,
-            'subject': subject,
-            'text': body,
-        }
-        
-        # Add HTML if provided
-        if html:
-            email_data['html'] = html
-        
-        # Send the email
-        response = resend.Emails.send(email_data)
-        
-        logger.info("mail.sent to=%s subject=%s response_id=%s", to_email, subject, response.get('id'))
+        mail.send(msg)
+        logger.info("mail.sent to=%s subject=%s", to_email, subject)
         return True
-        
     except Exception as e:
         logger.exception('mail.error send_failed to=%s subject=%s error=%s', to_email, subject, e)
         return False

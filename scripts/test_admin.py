@@ -3,15 +3,24 @@
 
 Usage: python scripts/test_admin.py
 """
-from app import create_app
 import base64
+import os
+import sys
+from pathlib import Path
+
+# Ensure project root on path and use local sqlite DB for safety
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+os.environ['DATABASE_URL'] = os.environ.get('TEST_DATABASE_URL', 'sqlite:///test.db')
+
+from app import create_app
 
 app = create_app()
 
 def run():
     with app.test_client() as c:
         def check(headers=None, label=None):
-            r = c.get('/admin', headers=headers or {})
+            r = c.get('/admin/', headers=headers or {})
             print(f"{label or '/admin'} -> {r.status_code}")
             if r.status_code == 200:
                 text = r.get_data(as_text=True)

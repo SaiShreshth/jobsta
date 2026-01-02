@@ -107,7 +107,7 @@ def login():
             db.session.commit()
             login_url = url_for('auth.verify', token=token_str, _external=True)
             print(f"Magic link for {email}: {login_url}")
-                current_app.logger.info("auth.login magic_link_issued email=%s", email)
+            current_app.logger.info("auth.login magic_link_issued email=%s", email)
             flash('Check the console for the magic link')
             return redirect(url_for('auth.login'))
     return render_template('auth/login.html', form=form)

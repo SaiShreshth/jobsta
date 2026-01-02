@@ -14,6 +14,10 @@ from dotenv import load_dotenv
 basedir = Path(__file__).parent
 load_dotenv(basedir / '.env')
 
+# Force local sqlite DB for tests to avoid touching production
+os.environ['DATABASE_URL'] = os.environ.get('TEST_DATABASE_URL', 'sqlite:///test.db')
+os.environ['MAIL_SUPPRESS_SEND'] = 'True'
+
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -199,13 +203,12 @@ def test_config(app):
     print("="*70)
     
     with app.app_context():
-        api_key = app.config.get('RESEND_API_KEY')
         suppress = app.config.get('MAIL_SUPPRESS_SEND')
         
-        print(f"RESEND_API_KEY: {'✅ Configured' if api_key else '❌ NOT SET'}")
+        print(f"MAIL_SERVER: {app.config.get('MAIL_SERVER')}")
         print(f"MAIL_DEFAULT_SENDER: {app.config.get('MAIL_DEFAULT_SENDER')}")
         print(f"MAIL_SENDER_NAME: {app.config.get('MAIL_SENDER_NAME')}")
-        print(f"MAIL_SUPPRESS_SEND: {suppress} {'(Dev mode - emails not actually sent)' if suppress else '(Production - emails sent via Resend)'}")
+        print(f"MAIL_SUPPRESS_SEND: {suppress} {'(Dev mode - emails not actually sent)' if suppress else '(Production - emails sent via SMTP)'}")
 
 def main():
     """Run all email flow tests"""
@@ -274,8 +277,8 @@ def main():
         print("\n📝 NOTES:")
         print("  • Emails are currently suppressed for development")
         print("  • To send real emails, set MAIL_SUPPRESS_SEND=False")
-        print("  • Domain verification is required on Resend")
-        print("  • Update MAIL_DEFAULT_SENDER to a verified domain")
+        print("  • Ensure MAIL_DEFAULT_SENDER matches your SMTP account")
+        print("  • Verify SMTP credentials are present in the environment")
         return 0
     else:
         print(f"\n⚠️  {total - passed} test(s) failed. Check logs above.")

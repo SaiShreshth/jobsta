@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Comprehensive test script for Resend email functionality
-Tests all email types: verification, temp password, and application confirmation
+Comprehensive test script for SMTP email functionality
+Tests verification, temp password, and application confirmation emails
 """
 
 import os
@@ -14,6 +14,10 @@ from dotenv import load_dotenv
 basedir = Path(__file__).parent
 load_dotenv(basedir / '.env')
 
+# Force local sqlite DB for tests to avoid touching production
+os.environ['DATABASE_URL'] = os.environ.get('TEST_DATABASE_URL', 'sqlite:///test.db')
+os.environ['MAIL_SUPPRESS_SEND'] = os.environ.get('MAIL_SUPPRESS_SEND', 'True')
+
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -21,6 +25,7 @@ def setup_app():
     """Initialize Flask app context"""
     from app import create_app
     app = create_app()
+    app.config['MAIL_SUPPRESS_SEND'] = os.environ.get('MAIL_SUPPRESS_SEND', 'True').lower() in ('1', 'true', 'yes')
     return app
 
 def test_verification_email(app):
@@ -132,11 +137,7 @@ def test_config(app):
     print("="*60)
     
     with app.app_context():
-        api_key = app.config.get('RESEND_API_KEY')
-        if api_key:
-            print(f"RESEND_API_KEY: {api_key[:20]}...")
-        else:
-            print(f"RESEND_API_KEY: NOT SET ⚠️")
+        print(f"MAIL_SERVER: {app.config.get('MAIL_SERVER')}")
         print(f"MAIL_DEFAULT_SENDER: {app.config.get('MAIL_DEFAULT_SENDER')}")
         print(f"MAIL_SENDER_NAME: {app.config.get('MAIL_SENDER_NAME')}")
         print(f"MAIL_SUPPRESS_SEND: {app.config.get('MAIL_SUPPRESS_SEND')}")
@@ -144,7 +145,7 @@ def test_config(app):
 def main():
     """Run all email tests"""
     print("\n" + "🚀 "*30)
-    print("RESEND EMAIL FUNCTIONALITY TEST SUITE")
+    print("SMTP EMAIL FUNCTIONALITY TEST SUITE")
     print("🚀 "*30)
     print(f"\nTest Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
