@@ -16,37 +16,40 @@ bp = Blueprint('auth', __name__)
 
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
+    """
+    Registration flow with email-first validation:
+    1. Validate form
+    2. Check email format (@msrit.edu)
+    3. Check if user already exists (READ-ONLY)
+    4. SEND VERIFICATION EMAIL
+    5. ONLY if email succeeds: create user + token in DB
+    6. If email fails: return error without DB writes
+    """
     form = RegistrationForm()
     if form.validate_on_submit():
         name = form.name.data
         email = form.email.data
         current_app.logger.info("auth.register attempt email=%s", email)
+        
+        # Step 1: Validate email format
         if not email.endswith('@msrit.edu'):
             current_app.logger.warning("auth.register blocked_non_msrit email=%s", email)
             flash('Only @msrit.edu emails are allowed')
             return redirect(url_for('auth.register'))
-        # Check if user exists
+        
+        # Step 2: Check if user already exists (READ-ONLY - no DB write)
         user = User.query.filter_by(email=email).first()
         if user:
             current_app.logger.info("auth.register exists email=%s", email)
             flash('User already exists. Please login.')
             return redirect(url_for('auth.login'))
-        # Create user
-        user = User(email=email, name=name, is_verified=False)
-        if email == 'admin@msrit.edu':
-            user.role = 'admin'
-        db.session.add(user)
-        db.session.commit()
-        current_app.logger.info("auth.register created_user id=%s email=%s", user.id, email)
-        # Generate magic token
+        
+        # Step 3: Generate verification token (but don't save yet)
         token_str = secrets.token_urlsafe(32)
-        expires = datetime.utcnow() + timedelta(hours=1)  # short-lived
-        token = Token(email=email, token=token_str, expires_at=expires, used=False)
-        db.session.add(token)
-        db.session.commit()
-        current_app.logger.info("auth.register token_created email=%s", email)
-        # Send verification email via SMTP with detailed logging
         login_url = url_for('auth.verify', token=token_str, _external=True)
+        current_app.logger.info("auth.register token_generated email=%s", email)
+        
+        # Step 4: SEND VERIFICATION EMAIL FIRST (before any DB writes)
         current_app.logger.info("auth.register email_send_start to=%s", email)
         
         from app.utils.mail_logger import send_email_with_detailed_logging
@@ -58,12 +61,33 @@ def register():
             body=email_body
         )
         
+        # Step 5: ONLY write to DB if email was sent successfully
         if success:
-            current_app.logger.info("auth.register email_sent to=%s", email)
+            current_app.logger.info("auth.register email_sent to=%s - proceeding with DB writes", email)
+            
+            # Create user
+            user = User(email=email, name=name, is_verified=False)
+            if email == 'admin@msrit.edu':
+                user.role = 'admin'
+            db.session.add(user)
+            db.session.flush()  # Get user.id without committing
+            current_app.logger.info("auth.register created_user id=%s email=%s", user.id, email)
+            
+            # Create verification token
+            expires = datetime.utcnow() + timedelta(hours=1)  # short-lived
+            token = Token(email=email, token=token_str, expires_at=expires, used=False)
+            db.session.add(token)
+            
+            # Commit all changes together
+            db.session.commit()
+            current_app.logger.info("auth.register token_created email=%s", email)
+            
             flash('Registration successful! Check your email to verify your account.', 'success')
         else:
-            current_app.logger.error("auth.register email_failed to=%s error=%s", email, error)
-            flash(f'Account created. Email service error: {error}', 'warning')
+            # Email failed - NO DB writes performed
+            current_app.logger.error("auth.register email_failed to=%s error=%s - NO DB changes", email, error)
+            flash(f'Registration failed: Email service error - {error}. Please try again.', 'danger')
+        
         return redirect(url_for('auth.register'))
     return render_template('auth/register.html', form=form)
 

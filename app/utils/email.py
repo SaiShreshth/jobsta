@@ -14,7 +14,6 @@ def send_email(to_email: str, subject: str, body: str, html: str | None = None) 
     )
     
     return success
-        return False
 
 
 def send_verification_email(email: str, verification_link: str) -> bool:
