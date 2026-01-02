@@ -1,33 +1,19 @@
-"""Email helpers using Flask-Mail."""
+"""Email helpers using Resend API."""
 from flask import current_app
-from flask_mail import Message
-
-from app.extensions import mail
 
 
 def send_email(to_email: str, subject: str, body: str, html: str | None = None) -> bool:
-    """Send email with Flask-Mail, honoring MAIL_SUPPRESS_SEND."""
-    logger = current_app.logger
-
-    sender_addr = current_app.config.get('MAIL_DEFAULT_SENDER', 'noreply@jobsta.com')
-    sender_name = current_app.config.get('MAIL_SENDER_NAME', 'jobsta')
-    sender = f"{sender_name} <{sender_addr}>" if sender_name else sender_addr
-
-    if current_app.config.get('MAIL_SUPPRESS_SEND'):
-        logger.info("mail.suppressed to=%s subject=%s", to_email, subject)
-        logger.debug("mail.suppressed body=%s", body)
-        return True
-
-    msg = Message(subject=subject, recipients=[to_email], sender=sender, body=body)
-    if html:
-        msg.html = html
-
-    try:
-        mail.send(msg)
-        logger.info("mail.sent to=%s subject=%s", to_email, subject)
-        return True
-    except Exception as e:
-        logger.exception('mail.error send_failed to=%s subject=%s error=%s', to_email, subject, e)
+    """Send email using Resend API with detailed logging."""
+    from app.utils.mail_logger import send_email_with_detailed_logging
+    
+    success, error = send_email_with_detailed_logging(
+        subject=subject,
+        recipient=to_email,
+        body=body,
+        html=html
+    )
+    
+    return success
         return False
 
 

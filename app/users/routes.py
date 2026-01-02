@@ -4,8 +4,7 @@ from app.models import Recommendation
 from app.utils.decorators import login_required
 from app.utils.auth import get_current_user
 from app.forms import RecommendationForm
-from app.extensions import db, mail
-from flask_mail import Message
+from app.extensions import db
 from datetime import datetime, timedelta
 from flask import abort
 

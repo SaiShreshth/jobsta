@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from flask import Flask, send_from_directory
 from .config import Config
-from .extensions import db, migrate, bcrypt, mail
+from .extensions import db, migrate, bcrypt
 from dotenv import load_dotenv
 from whitenoise import WhiteNoise
 
@@ -166,15 +166,14 @@ def create_app(config_class=Config):
 
     db.init_app(app)
     migrate.init_app(app, db)
-    mail.init_app(app)
     bcrypt.init_app(app)
     
     # Store startup time for diagnostics
     app.config['STARTUP_TIME'] = datetime.utcnow().isoformat()
     
-    # Test mail service after initialization
+    # Test mail service after initialization (using Resend API)
     app.logger.info("="*60)
-    app.logger.info("INITIALIZING MAIL SERVICE")
+    app.logger.info("INITIALIZING MAIL SERVICE (RESEND API)")
     app.logger.info("="*60)
     try:
         from app.utils.mail_logger import test_mail_connection_detailed

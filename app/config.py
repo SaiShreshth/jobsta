@@ -10,19 +10,13 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {}
     # Logging
     LOG_LEVEL = (os.environ.get('LOG_LEVEL') or 'INFO').upper()
-    # SMTP mail configuration
-    MAIL_SERVER = os.environ.get('EMAIL_SERVER') or 'smtp.gmail.com'
-    MAIL_PORT = int(os.environ.get('EMAIL_PORT') or 587)
-    MAIL_USE_TLS = True
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or os.environ.get('EMAIL_USERNAME')
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or os.environ.get('EMAIL_PASSWORD')
-    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or 'noreply@jobsta.com'
+    
+    # Resend API configuration (replaces SMTP)
+    RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or 'onboarding@resend.dev'
+    MAIL_SENDER_NAME = os.environ.get('MAIL_SENDER_NAME') or 'Jobsta'
     MAIL_SUPPRESS_SEND = os.environ.get('MAIL_SUPPRESS_SEND', 'False').lower() in ('1', 'true', 'yes')
-    MAIL_SENDER_NAME = os.environ.get('MAIL_SENDER_NAME') or 'jobsta'
-    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or 'noreply@jobsta.com'
-    MAIL_SENDER_NAME = os.environ.get('MAIL_SENDER_NAME') or 'jobsta'
-    # For development, optionally suppress email sending
-    MAIL_SUPPRESS_SEND = os.environ.get('MAIL_SUPPRESS_SEND', 'False').lower() in ('1', 'true', 'yes')
+    
     WTF_CSRF_ENABLED = True
     # Use secure cookies (only set to True in production with HTTPS)
     COOKIE_SECURE = os.environ.get('COOKIE_SECURE', 'False').lower() in ('1', 'true', 'yes')
